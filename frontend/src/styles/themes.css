@@ -1,0 +1,40 @@
+/* Light theme (default) */
+:root {
+  --bg-primary: 249 250 251;
+  --bg-secondary: 255 255 255;
+  --bg-tertiary: 243 244 246;
+  
+  --text-primary: 17 24 39;
+  --text-secondary: 75 85 99;
+  --text-tertiary: 156 163 175;
+  
+  --border-primary: 229 231 235;
+  --border-secondary: 209 213 219;
+}
+
+/* Dark theme */
+[data-theme="dark"],
+.dark {
+  --bg-primary: 3 7 18;
+  --bg-secondary: 17 24 39;
+  --bg-tertiary: 31 41 55;
+  
+  --text-primary: 249 250 251;
+  --text-secondary: 209 213 219;
+  --text-tertiary: 107 114 128;
+  
+  --border-primary: 31 41 55;
+  --border-secondary: 55 65 81;
+}
+
+/* Theme transitions */
+* {
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              color var(--transition-base);
+}
+
+/* Disable transitions on theme change */
+.theme-transition-disabled * {
+  transition: none !important;
+}

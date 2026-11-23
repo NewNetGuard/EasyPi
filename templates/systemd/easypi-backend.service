@@ -1,0 +1,59 @@
+[Unit]
+Description=EasyPi Backend Service (FastAPI)
+Documentation=https://github.com/easypi/backend
+After=network-online.target easypi-ipv6-policy-guard.service
+Wants=network-online.target
+Requires=easypi-ipv6-policy-guard.service
+BindsTo=easypi-ipv6-policy-guard.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+# If NetProtection is local on port 53, we might want to wait for it, 
+# but backend usually just binds to port.
+
+[Service]
+Type=simple
+User=easypi
+Group=easypi
+SupplementaryGroups=systemd-journal
+UMask=0027
+WorkingDirectory=/opt/EasyPi/backend
+
+# Environment variables
+EnvironmentFile=-/opt/EasyPi/.env
+EnvironmentFile=-/opt/go2rtc/api.env
+Environment="PATH=/opt/EasyPi/backend/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/opt/EasyPi/backend"
+Environment="NETPROTECTION_STANDALONE=true"
+
+# The cache is runtime state and may be absent after cleanup or a fresh deploy.
+ExecStartPre=+/usr/bin/install -d -o easypi -g easypi -m 0750 /opt/EasyPi/cache
+
+# Start uvicorn from venv
+ExecStart=/opt/EasyPi/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --timeout-graceful-shutdown 10
+# Let FastAPI close its owned workers and privileged streaming helpers first.
+# If graceful shutdown exceeds the deadline, systemd still kills the full cgroup.
+KillMode=mixed
+TimeoutStopSec=30s
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+# The backend intentionally enters the reviewed sudo runner for administrative
+# actions. Privilege-blocking filesystem/capability settings would be inherited
+# by that child and make package, firewall and gateway actions fail after sudo
+# authorizes them. The root boundary is the reviewed sudoers + runner policy.
+ProtectHome=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+ReadWritePaths=/opt/EasyPi/data
+ReadWritePaths=/opt/EasyPi/backend/data
+ReadWritePaths=/opt/EasyPi/logs
+ReadWritePaths=-/opt/EasyPi/cache
+ReadWritePaths=/opt/EasyPi/recordings
+ReadWritePaths=/opt/EasyPi/config
+
+[Install]
+WantedBy=multi-user.target

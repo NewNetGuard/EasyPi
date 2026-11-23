@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "product": "EasyPi",
+  "principles": {
+    "default_live_mode": "read_only",
+    "destructive_target": "dedicated disposable test device only",
+    "evidence": ["command output", "HTTP result", "service state", "JSON report"]
+  },
+  "areas": [
+    {
+      "id": "onboarding",
+      "name": "Installation and onboarding",
+      "ui_routes": ["/setup"],
+      "api_prefixes": ["/api/setup", "/api/system"],
+      "checks": ["fresh-install", "first-admin", "network-mode", "reboot-persistence"],
+      "automation": "staged",
+      "risk": "destructive"
+    },
+    {
+      "id": "auth-users",
+      "name": "Authentication and users",
+      "ui_routes": ["/login", "/users"],
+      "api_prefixes": ["/api/v1/auth", "/api/v1/users"],
+      "checks": ["login", "logout", "roles", "sessions", "2fa", "csrf", "rate-limit"],
+      "automation": "partial",
+      "risk": "isolated-data"
+    },
+    {
+      "id": "dashboard-monitoring",
+      "name": "Dashboard and monitoring",
+      "ui_routes": ["/dashboard", "/monitoring"],
+      "api_prefixes": ["/api/system", "/api/v1/monitoring"],
+      "checks": ["health", "metrics", "websocket-reconnect", "service-summary"],
+      "automation": "partial",
+      "risk": "read-only"
+    },
+    {
+      "id": "network",
+      "name": "Network toolkit and activity",
+      "ui_routes": ["/network", "/network-activity"],
+      "api_prefixes": ["/api/network", "/api/v1/network-activity"],
+      "checks": ["interfaces", "connections", "dns-test", "lan-scan", "speed-test"],
+      "automation": "partial",
+      "risk": "active-probe"
+    },
+    {
+      "id": "guard",
+      "name": "Guard, DNS filtering and PRISM",
+      "ui_routes": ["/guard", "/piguard", "/netprotection"],
+      "api_prefixes": ["/api/netprotection", "/api/v1/dns"],
+      "checks": ["dns-block", "allowlist", "device-policy", "prism-flow-drop", "service-restart"],
+      "automation": "partial",
+      "risk": "network-mutating"
+    },
+    {
+      "id": "vpn",
+      "name": "VPN and Internet encryption",
+      "ui_routes": ["/vpn", "/internet-encryption"],
+      "api_prefixes": ["/api/v1/wireguard", "/api/vpn"],
+      "checks": ["profile-create", "client-connect", "egress-ip", "dns-leak", "reconnect"],
+      "automation": "partial",
+      "risk": "network-mutating"
+    },
+    {
+      "id": "chameleon",
+      "name": "Chameleon stealth tunnel",
+      "ui_routes": ["/stealth"],
+      "api_prefixes": ["/api/stealth"],
+      "checks": ["deploy", "client-connect", "inner-aead", "carrier-reconnect", "traffic-continuity", "privacy-logs", "fail-closed-outage", "runtime-connectivity-gate"],
+      "automation": "partial",
+      "risk": "network-mutating"
+    },
+    {
+      "id": "storage",
+      "name": "Files and PiCloud",
+      "ui_routes": ["/files", "/cloud", "/picloud"],
+      "api_prefixes": ["/api/v1/files", "/api/v1/picloud"],
+      "checks": ["upload", "download", "rename", "delete", "public-link", "password-link", "active-content-download"],
+      "automation": "partial",
+      "risk": "isolated-data"
+    },
+    {
+      "id": "backup-update",
+      "name": "Backup, rollback and signed updates",
+      "ui_routes": ["/backup", "/rollback"],
+      "api_prefixes": ["/api/v1/backup", "/api/v1/rollback"],
+      "checks": ["encrypted-backup", "postgres-restore", "corrupt-archive", "signature-reject", "health-rollback"],
+      "automation": "partial",
+      "risk": "destructive"
+    },
+    {
+      "id": "cameras",
+      "name": "Cameras, recording and PTZ",
+      "ui_routes": ["/devices"],
+      "api_prefixes": ["/api/v1/cameras", "/api/ptz"],
+      "checks": ["discovery", "live-view", "recording", "download", "retention", "ptz-auth"],
+      "automation": "staged",
+      "risk": "external-device"
+    },
+    {
+      "id": "operations",
+      "name": "Terminal, jobs and notifications",
+      "ui_routes": ["/terminal", "/jobs", "/notifications"],
+      "api_prefixes": ["/api/v1/terminal", "/api/v1/jobs", "/api/v1/notifications"],
+      "checks": ["terminal-auth", "terminal-resize", "job-progress", "backup-job-cancel", "notification-preferences", "smtp-settings", "push-renewal"],
+      "automation": "partial",
+      "risk": "isolated-data"
+    },
+    {
+      "id": "agent",
+      "name": "AI assistant",
+      "ui_routes": ["/ai"],
+      "api_prefixes": ["/api/v1/ai"],
+      "checks": ["multilingual-questions", "diagnostic-probes", "confirmation", "unsafe-request", "prompt-injection", "secret-redaction", "real-state-verification"],
+      "automation": "partial",
+      "risk": "isolated-data"
+    },
+    {
+      "id": "remote-dns",
+      "name": "Remote access and Personal DNS",
+      "ui_routes": ["/remote-access", "/dns"],
+      "api_prefixes": ["/api/v1/remote-access", "/api/v1/dns"],
+      "checks": ["tailscale-status", "route-approval", "dns-record-create", "dns-record-resolve"],
+      "automation": "staged",
+      "risk": "external-account"
+    },
+    {
+      "id": "settings-security",
+      "name": "Security and settings",
+      "ui_routes": ["/security", "/settings"],
+      "api_prefixes": ["/api/v1/security", "/api/v1/profiles"],
+      "checks": ["firewall", "fail2ban", "settings-save", "privilege-boundary", "secret-redaction"],
+      "automation": "partial",
+      "risk": "system-mutating"
+    },
+    {
+      "id": "marketplace-help",
+      "name": "Marketplace and help",
+      "ui_routes": ["/marketplace", "/help"],
+      "api_prefixes": [],
+      "checks": ["read-only-preview", "no-marketplace-api", "canonical-help-routes", "private-diagnostics", "help-navigation"],
+      "automation": "automated",
+      "risk": "read-only"
+    }
+  ],
+  "profiles": {
+    "quick": ["inventory", "acceptance-tests", "security-tests", "agent-tests"],
+    "full": ["inventory", "acceptance-tests", "ruff", "shell-syntax", "security-tests", "agent-tests", "frontend-lint", "frontend-types", "browser-test-list", "frontend-build", "chameleon-tests"],
+    "live-readonly": ["inventory", "live-http", "remote-services"],
+    "browser": ["inventory", "browser-public", "browser-authenticated", "browser-safe-interactions"],
+    "browser-data": ["inventory", "browser-user-lifecycle", "browser-picloud-lifecycle", "browser-files-lifecycle"],
+    "browser-agent": ["inventory", "browser-agent-live"],
+    "browser-network": ["inventory", "browser-network-observe"],
+    "browser-operations": ["inventory", "browser-operations-live"],
+    "browser-marketplace-help": ["inventory", "browser-marketplace-help"],
+    "browser-backup": ["inventory", "browser-backup-live"],
+    "browser-dns": ["inventory", "browser-dns-rewrite-live", "remote-services", "live-http"],
+    "guard-functional": ["inventory", "guard-dns-filter", "remote-services", "live-http"],
+    "prism-functional": ["inventory", "prism-flow-observe", "remote-services", "live-http"],
+    "release-security": ["inventory", "release-signature-reject", "remote-services", "live-http"],
+    "chameleon-recovery": ["inventory", "chameleon-reconnect", "chameleon-network-recovery", "chameleon-runtime-connectivity", "remote-services", "live-http"],
+    "wireguard-functional": ["inventory", "wireguard-lifecycle", "remote-services", "live-http"],
+    "camera-security": ["inventory", "camera-security-tests", "camera-go2rtc-boundary", "remote-services", "live-http"],
+    "operations-security": ["inventory", "operations-security-tests", "frontend-lint", "frontend-types"],
+    "marketplace-help-security": ["inventory", "marketplace-help-security-tests", "frontend-lint", "frontend-types"]
+  }
+}

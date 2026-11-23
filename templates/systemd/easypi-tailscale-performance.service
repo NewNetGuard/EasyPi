@@ -1,0 +1,12 @@
+[Unit]
+Description=EasyPi Tailscale Exit Node Performance
+After=network-online.target tailscaled.service
+Wants=network-online.target
+ConditionPathExists=/usr/sbin/ethtool
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/EasyPi/scripts/settings/tailscale_performance.sh auto
+
+[Install]
+WantedBy=multi-user.target

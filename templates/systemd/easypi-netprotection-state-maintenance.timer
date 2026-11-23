@@ -1,0 +1,12 @@
+[Unit]
+Description=EasyPi NetProtection State Maintenance Timer
+
+[Timer]
+OnBootSec=10m
+OnUnitActiveSec=1d
+RandomizedDelaySec=15m
+Persistent=true
+Unit=easypi-netprotection-state-maintenance.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-03",
+  "windows": {
+    "passed": 57,
+    "skipped_opt_in_linux": 3
+  },
+  "raspberry_pi": {
+    "passed": 60,
+    "failed": 0
+  },
+  "fixtures": "generated ephemeral secrets and AEAD-protected packets; no historical PCAP or browsing payload",
+  "new_real_browser_decryption": false,
+  "resource_limits_increased": false,
+  "active_services_restarted": false,
+  "coverage": {
+    "window": "latest 300 eligible DNS records, not a packet capture",
+    "groups": {
+      "youtube_page": {
+        "ipv4": 14,
+        "ipv6": 0
+      },
+      "youtube_api": {
+        "ipv4": 8,
+        "ipv6": 0
+      },
+      "video_cdn": {
+        "ipv4": 11,
+        "ipv6": 0
+      },
+      "images": {
+        "ipv4": 8,
+        "ipv6": 0
+      }
+    },
+    "unique_ipv4_across_groups": 41,
+    "historical_exact_connection_exclusions": "unavailable: last temporary scope config and packets not retained",
+    "observer_active": "inactive",
+    "phone_wifi_ipv6_at_audit": "link-local only; no global IPv6 observed"
+  }
+}

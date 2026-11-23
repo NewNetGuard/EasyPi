@@ -1,0 +1,53 @@
+[Unit]
+Description=EasyPi Passive Network Identity Observer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=easypi
+Group=easypi
+UMask=0027
+WorkingDirectory=/opt/EasyPi/backend
+ExecStartPre=+/usr/bin/install -d -o easypi -g easypi -m 0750 /opt/EasyPi/data/network
+ExecStart=/usr/bin/python3 -u /opt/EasyPi/backend/app/services/dhcp_observer.py --output /opt/EasyPi/data/network/dhcp_observations.json
+Restart=on-failure
+RestartSec=5
+
+# DHCP metadata and actual IPv4 source use are observed in this isolated process.
+# The web backend never receives packet-capture privileges.
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_PACKET AF_UNIX AF_NETLINK
+IPAddressDeny=any
+
+# The observer is read-only except for its bounded identity store.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# CapabilityBoundingSet and NoNewPrivileges remain the privilege boundary.
+# Do not deny the whole @privileged syscall group: iproute2 uses capset while
+# dropping its already bounded capabilities during read-only LAN discovery.
+SystemCallFilter=~@mount @resources
+ReadWritePaths=/opt/EasyPi/data/network
+
+[Install]
+WantedBy=multi-user.target

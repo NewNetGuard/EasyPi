@@ -1,0 +1,158 @@
+/* Custom Theme Variables */
+
+:root {
+  /* Dynamic accent color (overridden by JS) */
+  --color-primary-hex: #0ea5e9;
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  
+  /* Dynamic border radius */
+  --radius-base: 0.5rem;
+  
+  /* Dynamic font scale */
+  --font-size-base: 16px;
+}
+
+/* Apply dynamic primary colors via CSS custom properties */
+.accent-primary {
+  color: var(--color-primary-hex);
+}
+
+.bg-accent-primary {
+  background-color: var(--color-primary-hex);
+}
+
+.border-accent-primary {
+  border-color: var(--color-primary-hex);
+}
+
+/* Dynamic border radius classes */
+[data-radius="none"] .radius-dynamic {
+  border-radius: 0;
+}
+
+[data-radius="sm"] .radius-dynamic {
+  border-radius: 0.25rem;
+}
+
+[data-radius="md"] .radius-dynamic {
+  border-radius: 0.5rem;
+}
+
+[data-radius="lg"] .radius-dynamic {
+  border-radius: 0.75rem;
+}
+
+[data-radius="xl"] .radius-dynamic {
+  border-radius: 1rem;
+}
+
+/* Font scale adjustments */
+[data-font-scale="small"] {
+  font-size: 14px;
+}
+
+[data-font-scale="normal"] {
+  font-size: 16px;
+}
+
+[data-font-scale="large"] {
+  font-size: 18px;
+}
+
+/* Theme-aware focus ring using accent color */
+.focus-accent:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-200);
+}
+
+.dark .focus-accent:focus {
+  box-shadow: 0 0 0 3px var(--color-primary-800);
+}
+
+/* Accent gradient backgrounds */
+.bg-accent-gradient {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+}
+
+.bg-accent-gradient-subtle {
+  background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
+}
+
+.dark .bg-accent-gradient-subtle {
+  background: linear-gradient(135deg, var(--color-primary-900), var(--color-primary-800));
+}
+
+/* Color swatch preview styles */
+.color-swatch {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.color-swatch.active {
+  border-color: currentColor;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor;
+}
+
+.dark .color-swatch.active {
+  box-shadow: 0 0 0 2px rgb(17 24 39), 0 0 0 4px currentColor;
+}
+
+/* Preset card styles */
+.preset-card {
+  position: relative;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid transparent;
+  background: rgb(249 250 251);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dark .preset-card {
+  background: rgb(31 41 55);
+}
+
+.preset-card:hover {
+  border-color: rgb(209 213 219);
+}
+
+.dark .preset-card:hover {
+  border-color: rgb(75 85 99);
+}
+
+.preset-card.active {
+  border-color: var(--color-primary-hex);
+  background: var(--color-primary-50);
+}
+
+.dark .preset-card.active {
+  background: rgba(var(--color-primary), 0.1);
+}
+
+.preset-card .preview-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+/* Theme transition */
+.theme-transitioning * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}

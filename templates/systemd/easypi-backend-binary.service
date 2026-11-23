@@ -1,0 +1,62 @@
+[Unit]
+Description=EasyPi Backend Service (Native Binary)
+Documentation=https://github.com/easypi/backend
+After=network-online.target easypi-ipv6-policy-guard.service
+Wants=network-online.target
+Requires=easypi-ipv6-policy-guard.service
+BindsTo=easypi-ipv6-policy-guard.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=easypi
+Group=easypi
+SupplementaryGroups=systemd-journal
+UMask=0027
+WorkingDirectory=/opt/EasyPi/backend
+
+# Environment variables for path configuration
+EnvironmentFile=-/opt/EasyPi/.env
+EnvironmentFile=-/opt/go2rtc/api.env
+Environment="EASYPI_ROOT=/opt/EasyPi"
+Environment="EASYPI_DATA_DIR=/opt/EasyPi/data"
+Environment="EASYPI_BACKEND_DIR=/opt/EasyPi/backend"
+Environment="EASYPI_BACKEND_DATA_DIR=/opt/EasyPi/backend/data"
+Environment="EASYPI_SCRIPTS_DIR=/opt/EasyPi/scripts"
+Environment="EASYPI_LOGS_DIR=/opt/EasyPi/logs"
+Environment="NETPROTECTION_STANDALONE=true"
+
+# The cache is runtime state and may be absent after cleanup or a fresh deploy.
+ExecStartPre=+/usr/bin/install -d -o easypi -g easypi -m 0750 /opt/EasyPi/cache
+Environment="API_HOST=127.0.0.1"
+
+# Start native binary
+ExecStart=/opt/EasyPi/backend/bin/easypi-backend
+# Let FastAPI close its owned workers and privileged streaming helpers first.
+# If graceful shutdown exceeds the deadline, systemd still kills the full cgroup.
+KillMode=mixed
+TimeoutStopSec=30s
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+# The backend intentionally enters the reviewed sudo runner for administrative
+# actions. Privilege-blocking filesystem/capability settings would be inherited
+# by that child and make package, firewall and gateway actions fail after sudo
+# authorizes them. The root boundary is the reviewed sudoers + runner policy.
+ProtectHome=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+ReadWritePaths=/opt/EasyPi/data
+ReadWritePaths=/opt/EasyPi/backend/data
+ReadWritePaths=/opt/EasyPi/logs
+ReadWritePaths=-/opt/EasyPi/cache
+ReadWritePaths=/opt/EasyPi/recordings
+ReadWritePaths=/opt/EasyPi/config
+
+[Install]
+WantedBy=multi-user.target

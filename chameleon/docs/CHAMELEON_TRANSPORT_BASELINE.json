@@ -1,0 +1,342 @@
+{
+  "paths": {
+    "cham0": {
+      "dl_cloudflare": {
+        "mb_per_s": {
+          "median": 13.653,
+          "min": 13.596,
+          "max": 14.132,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 25.245,
+          "min": 24.313,
+          "max": 26.09,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 48.879,
+          "min": 47.859,
+          "max": 50.594,
+          "n": 3
+        }
+      },
+      "dl_hetzner": {
+        "mb_per_s": {
+          "median": 5.284,
+          "min": 4.752,
+          "max": 8.155,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 15.764,
+          "min": 14.641,
+          "max": 18.309,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 24.094,
+          "min": 20.719,
+          "max": 32.455,
+          "n": 3
+        }
+      },
+      "upload": {
+        "mb_per_s": {
+          "median": 1.449,
+          "min": 1.436,
+          "max": 1.782,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 7.428,
+          "min": 7.41,
+          "max": 10.599,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 14.019,
+          "min": 13.158,
+          "max": 14.752,
+          "n": 3
+        }
+      },
+      "site": {
+        "connect_ms": {
+          "median": 43.335,
+          "min": 39.151,
+          "max": 1062.387,
+          "n": 18
+        },
+        "tls_ms": {
+          "median": 98.956,
+          "min": 81.999,
+          "max": 1109.896,
+          "n": 18
+        },
+        "first_byte_ms": {
+          "median": 162.288,
+          "min": 120.19,
+          "max": 1153.098,
+          "n": 18
+        },
+        "total_ms": {
+          "median": 410.493,
+          "min": 262.466,
+          "max": 1323.393,
+          "n": 18
+        }
+      },
+      "parallel4": {
+        "mb_per_s": {
+          "median": 14.106,
+          "min": 13.978,
+          "max": 14.234,
+          "n": 2
+        },
+        "pi_cpu_pct": {
+          "median": 33.035,
+          "min": 28.925,
+          "max": 37.146,
+          "n": 2
+        },
+        "client_cpu_pct_of_core": {
+          "median": 56.14,
+          "min": 55.772,
+          "max": 56.508,
+          "n": 2
+        }
+      }
+    },
+    "eth0": {
+      "dl_cloudflare": {
+        "mb_per_s": {
+          "median": 20.127,
+          "min": 19.879,
+          "max": 20.129,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 15.423,
+          "min": 13.84,
+          "max": 17.27,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 3.221,
+          "min": 2.783,
+          "max": 3.623,
+          "n": 3
+        }
+      },
+      "dl_hetzner": {
+        "mb_per_s": {
+          "median": 19.985,
+          "min": 19.219,
+          "max": 19.987,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 16.293,
+          "min": 15.638,
+          "max": 18.265,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 2.798,
+          "min": 2.691,
+          "max": 2.798,
+          "n": 3
+        }
+      },
+      "upload": {
+        "mb_per_s": {
+          "median": 10.099,
+          "min": 10.089,
+          "max": 10.1,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 8.9,
+          "min": 8.175,
+          "max": 9.226,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 3.232,
+          "min": 2.825,
+          "max": 3.636,
+          "n": 3
+        }
+      },
+      "site": {
+        "connect_ms": {
+          "median": 21.155,
+          "min": 19.623,
+          "max": 52.494,
+          "n": 18
+        },
+        "tls_ms": {
+          "median": 52.841,
+          "min": 45.856,
+          "max": 81.954,
+          "n": 18
+        },
+        "first_byte_ms": {
+          "median": 86.274,
+          "min": 66.077,
+          "max": 264.787,
+          "n": 18
+        },
+        "total_ms": {
+          "median": 171.745,
+          "min": 146.96,
+          "max": 302.224,
+          "n": 18
+        }
+      },
+      "parallel4": {
+        "mb_per_s": {
+          "median": 20.229,
+          "min": 20.171,
+          "max": 20.287,
+          "n": 2
+        },
+        "pi_cpu_pct": {
+          "median": 18.226,
+          "min": 17.946,
+          "max": 18.507,
+          "n": 2
+        },
+        "client_cpu_pct_of_core": {
+          "median": 3.439,
+          "min": 3.429,
+          "max": 3.449,
+          "n": 2
+        }
+      }
+    }
+  },
+  "failed_transfers": {},
+  "tunnel_carrier": {
+    "ja4": [],
+    "upload_rhythm": {
+      "client_writes": 22610,
+      "echo_share": 0.777,
+      "echo_lag_ms_median": 0,
+      "small_down_records_per_write": 1.025,
+      "download_seconds": 110,
+      "writes_per_download_second": 205.5,
+      "write_gap_ms_p10_p50_p90": [
+        0,
+        1,
+        9
+      ]
+    },
+    "connections": 1,
+    "max_opened_within_1s": 0,
+    "connections_over_1mb": 1,
+    "upload_only_connections": 0,
+    "records_up": {
+      "records": 23581,
+      "top8_share": 0.017,
+      "small_share": 0.014,
+      "max": 48497,
+      "most_common": [
+        [
+          30,
+          270
+        ],
+        [
+          5629,
+          22
+        ],
+        [
+          4566,
+          20
+        ],
+        [
+          6163,
+          19
+        ],
+        [
+          4700,
+          18
+        ]
+      ]
+    },
+    "records_down": {
+      "records": 105817,
+      "top8_share": 0.836,
+      "small_share": 0.484,
+      "max": 34900,
+      "most_common": [
+        [
+          16401,
+          32159
+        ],
+        [
+          35,
+          28055
+        ],
+        [
+          30,
+          19064
+        ],
+        [
+          4116,
+          2810
+        ],
+        [
+          29,
+          2309
+        ]
+      ]
+    },
+    "phases": {
+      "download": {
+        "seconds": 37,
+        "runs": 1,
+        "packets_per_min": 198096,
+        "kb_up_per_min": 23319,
+        "kb_down_per_min": 588370
+      },
+      "upload": {
+        "seconds": 49,
+        "runs": 1,
+        "packets_per_min": 113898,
+        "kb_up_per_min": 114902,
+        "kb_down_per_min": 9177
+      },
+      "sites": {
+        "seconds": 9,
+        "runs": 1,
+        "packets_per_min": 49548,
+        "kb_up_per_min": 6837,
+        "kb_down_per_min": 78254
+      },
+      "parallel": {
+        "seconds": 14,
+        "runs": 1,
+        "packets_per_min": 377406,
+        "kb_up_per_min": 59245,
+        "kb_down_per_min": 1028410
+      },
+      "direct_runs": {
+        "seconds": 36,
+        "runs": 1,
+        "packets_per_min": 23,
+        "kb_up_per_min": 4,
+        "kb_down_per_min": 1
+      }
+    },
+    "connection_lifetimes": [
+      {
+        "opened_at_min": 0.0,
+        "minutes": 2.3,
+        "mb": 766.9,
+        "seen_from_start": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,120 @@
+{
+ "bulk_capped_1": {
+  "big_ms": {
+   "max": 89.56,
+   "n": 1600,
+   "p50": 46.21,
+   "p99": 77.31
+  },
+  "down_records": 98,
+  "mb_s": 18.993784156178414,
+  "ok": true,
+  "top": "30x96 224x1 26x1",
+  "wu_records_30": 96
+ },
+ "bulk_capped_2": {
+  "big_ms": {
+   "max": 90.63,
+   "n": 1600,
+   "p50": 45.19,
+   "p99": 78.02
+  },
+  "down_records": 98,
+  "mb_s": 18.996289193053222,
+  "ok": true,
+  "top": "30x96 224x1 26x1",
+  "wu_records_30": 96
+ },
+ "bulk_capped_3": {
+  "big_ms": {
+   "max": 90.78,
+   "n": 1600,
+   "p50": 45.36,
+   "p99": 78.44
+  },
+  "down_records": 97,
+  "mb_s": 18.99792472399609,
+  "ok": true,
+  "top": "30x95 225x1 26x1",
+  "wu_records_30": 95
+ },
+ "bulk_free_1": {
+  "big_ms": {
+   "max": 53.55,
+   "n": 1600,
+   "p50": 18.84,
+   "p99": 53.43
+  },
+  "down_records": 58,
+  "mb_s": 27.13963038354506,
+  "ok": true,
+  "top": "30x56 225x1 26x1",
+  "wu_records_30": 56
+ },
+ "bulk_free_2": {
+  "big_ms": {
+   "max": 52.78,
+   "n": 1600,
+   "p50": 19.73,
+   "p99": 52.35
+  },
+  "down_records": 57,
+  "mb_s": 27.031128295591444,
+  "ok": true,
+  "top": "30x55 225x1 26x1",
+  "wu_records_30": 55
+ },
+ "interactive": {
+  "bulk_mb_s": 18.583833126712037,
+  "down_records": 99,
+  "ok": true,
+  "probe_ms": {
+   "max": 59.09,
+   "n": 66,
+   "p50": 30.28,
+   "p99": 59.09
+  },
+  "top": "30x94 26x2 219x1 43x1 224x1",
+  "wu_records_30": 94
+ },
+ "last_bare_end": {
+  "ok": true
+ },
+ "last_last_byte": {
+  "ok": true
+ },
+ "pauses": {
+  "ok": true,
+  "small_ms": {
+   "max": 15.97,
+   "n": 2,
+   "p50": 15.97,
+   "p99": 15.97
+  }
+ },
+ "slow_3mb": {
+  "big_ms": {
+   "max": 2193.62,
+   "n": 1600,
+   "p50": 1763.66,
+   "p99": 2160.4
+  },
+  "down_records": 41,
+  "mb_s": 2.987828015575275,
+  "ok": true,
+  "top": "30x39 230x1 26x1",
+  "wu_records_30": 39
+ },
+ "trickle": {
+  "down_records": 3,
+  "ok": true,
+  "small_ms": {
+   "max": 17.96,
+   "n": 400,
+   "p50": 16.59,
+   "p99": 17.29
+  },
+  "top": "221x1 26x1 30x1",
+  "wu_records_30": 1
+ }
+}

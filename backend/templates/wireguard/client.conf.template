@@ -1,0 +1,10 @@
+﻿[Interface]
+PrivateKey = {{ client_private_key }}
+Address    = {{ client_address_cidr }}
+DNS        = {{ dns }}
+
+[Peer]
+PublicKey           = {{ server_public_key }}
+Endpoint            = {{ endpoint_host }}:{{ listen_port }}
+AllowedIPs          = {{ allowed_ips }}
+PersistentKeepalive = 25

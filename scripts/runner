@@ -1,0 +1,264 @@
+#!/bin/bash
+#
+# EasyPi Secure Script Runner
+# Executes approved scripts with root privileges
+# Location: /opt/EasyPi/scripts/runner
+# Owner: root:root, chmod 750
+#
+
+set -euo pipefail
+
+export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+unset PYTHONPATH PYTHONHOME BASH_ENV ENV CDPATH GLOBIGNORE
+umask 077
+
+# Configuration
+SCRIPTS_BASE="/opt/EasyPi/scripts"
+LOG_FILE="/var/log/easypi/runner.log"
+declare -Ar ALLOWED_SCRIPTS=(
+    # Service catalog and installer jobs.
+    ["services/ai.sh"]=1
+    ["services/start_installer_job.sh"]=1
+    ["services/tailscale.sh"]=1
+    ["services/wireguard.sh"]=1
+
+    # Security operations exposed by the backend.
+    ["security/fsck_reboot.sh"]=1
+    ["security/set_user_password.sh"]=1
+    ["security/sshd_hardening.sh"]=1
+    ["security/update_system.sh"]=1
+
+    # Backup operations.
+    ["backup/backup_file.sh"]=1
+    ["backup/create_backup.sh"]=1
+    ["backup/create_config_backup.sh"]=1
+    ["backup/create_full_backup.sh"]=1
+    ["backup/import_archive.sh"]=1
+    ["backup/recovery_key.sh"]=1
+    ["backup/restore_config_backup.sh"]=1
+
+    # Fixed service lifecycle operations. This helper accepts no service names
+    # from the caller and schedules execution outside the backend process.
+    ["maintenance/restart_services.sh"]=1
+
+    # Validated EasyPi group membership and sudoers template installation.
+    ["setup/add_user_permissions.sh"]=1
+    ["setup/install_ffmpeg.sh"]=1
+
+    # Validating settings wrappers.
+    ["settings/gateway_config.sh"]=1
+    ["settings/generate_tls_certs.sh"]=1
+    ["settings/go2rtc_config.sh"]=1
+    ["settings/letsencrypt_duckdns.sh"]=1
+    ["settings/mobile_link_agent.sh"]=1
+    ["settings/mobile_link_relay_secrets.sh"]=1
+    ["settings/network_firewall.sh"]=1
+    ["settings/outbound_vpn.sh"]=1
+    ["settings/outbound_vpn_secrets.sh"]=1
+    ["settings/retrain_ml_model.sh"]=1
+    ["settings/setup_app_blocking.sh"]=1
+    ["settings/setup_prism_flowgraph.sh"]=1
+    ["settings/setup_prism_shadow.sh"]=1
+    ["settings/setup_vpn_blocking.sh"]=1
+    ["settings/stealth_vpn.sh"]=1
+    ["settings/stealth_secrets.sh"]=1
+    ["settings/tailscale_relay_secrets.sh"]=1
+    ["settings/system_settings.sh"]=1
+    ["settings/tailscale_control.sh"]=1
+    ["settings/tailscale_performance.sh"]=1
+    ["settings/update_adult_blocklist.sh"]=1
+    ["settings/update_nrd_list.sh"]=1
+)
+
+# Logging function
+log_entry() {
+    local level="$1"
+    shift
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] [user:${SUDO_USER:-unknown}] $*" >> "$LOG_FILE"
+}
+
+# JSON response
+json_response() {
+    local status="$1"
+    local message="$2"
+    local exit_code="${3:-0}"
+    
+    cat <<EOF
+{
+  "status": "$status",
+  "message": "$message",
+  "exit_code": $exit_code,
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+}
+
+# The privileged log tree is rooted under /var/log, where easypi cannot replace
+# directory entries or redirect writes through symlinks.
+LOG_DIR="$(dirname "$LOG_FILE")"
+install -d -o root -g easypi -m 0750 "$LOG_DIR"
+if [[ -L "$LOG_FILE" ]]; then
+    echo "Refusing symlink runner log: $LOG_FILE" >&2
+    exit 1
+fi
+touch "$LOG_FILE"
+chown root:easypi "$LOG_FILE"
+chmod 0640 "$LOG_FILE"
+
+# Check if running as root (via sudo)
+if [[ $EUID -ne 0 ]]; then
+    json_response "error" "Runner must be executed with sudo" 1
+    exit 1
+fi
+
+# Accept an end-to-end deadline only for the Stealth operation supervised below.
+# CLOCK_MONOTONIC has the same kernel-wide value across the backend and runner.
+OPERATION_DEADLINE_NS=""
+if [[ "${1:-}" == "--deadline-monotonic-ns" ]]; then
+    if [[ $# -lt 3 || ! "${2:-}" =~ ^[0-9]{1,20}$ || "${2:-}" == "0" ]]; then
+        log_entry "ERROR" "Invalid privileged operation deadline"
+        json_response "error" "Invalid privileged operation deadline" 1
+        exit 1
+    fi
+    OPERATION_DEADLINE_NS="$2"
+    shift 2
+fi
+
+# Require at least one argument (script path)
+if [[ $# -lt 1 ]]; then
+    log_entry "ERROR" "No script provided"
+    json_response "error" "Usage: runner <script_path> [args...]" 1
+    exit 1
+fi
+
+SCRIPT_RELATIVE="$1"
+shift
+SCRIPT_ARGS=("$@")
+
+# A future script must be reviewed and explicitly added before it becomes a root
+# entry point. Directory membership alone never grants NOPASSWD execution.
+if [[ -z "${ALLOWED_SCRIPTS[$SCRIPT_RELATIVE]+x}" ]]; then
+    log_entry "ERROR" "Script is not allowlisted: $SCRIPT_RELATIVE"
+    json_response "error" "Script is not approved for privileged execution" 1
+    exit 1
+fi
+if [[ -n "$OPERATION_DEADLINE_NS" && "$SCRIPT_RELATIVE" != "settings/stealth_vpn.sh" ]]; then
+    log_entry "ERROR" "Operation deadline is not allowed for: $SCRIPT_RELATIVE"
+    json_response "error" "Operation deadline is only supported for Stealth" 1
+    exit 1
+fi
+
+# Construct full path
+SCRIPT_FULL="$SCRIPTS_BASE/$SCRIPT_RELATIVE"
+
+# Security: Resolve canonical path to prevent directory traversal
+SCRIPT_CANONICAL=$(realpath -m "$SCRIPT_FULL" 2>/dev/null || echo "")
+
+if [[ -z "$SCRIPT_CANONICAL" ]]; then
+    log_entry "ERROR" "Cannot resolve path: $SCRIPT_FULL"
+    json_response "error" "Invalid script path" 1
+    exit 1
+fi
+
+# Ensure canonical path is still within SCRIPTS_BASE
+if [[ "$SCRIPT_CANONICAL" != "$SCRIPTS_BASE"/* ]]; then
+    log_entry "ERROR" "Path traversal attempt: $SCRIPT_CANONICAL"
+    json_response "error" "Script must be within $SCRIPTS_BASE" 1
+    exit 1
+fi
+
+# Check if script exists
+if [[ ! -f "$SCRIPT_CANONICAL" ]]; then
+    log_entry "ERROR" "Script not found: $SCRIPT_CANONICAL"
+    json_response "error" "Script not found: $SCRIPT_RELATIVE" 1
+    exit 1
+fi
+
+# A runner target is privileged code. Refuse any target that is not root-owned
+# or is writable outside root, even if an installer/upgrade accidentally
+# regresses permissions.
+SCRIPT_UID="$(stat -c '%u' -- "$SCRIPT_CANONICAL" 2>/dev/null || echo -1)"
+SCRIPT_MODE="$(stat -c '%a' -- "$SCRIPT_CANONICAL" 2>/dev/null || echo 777)"
+if [[ "$SCRIPT_UID" != "0" || $((8#$SCRIPT_MODE & 8#022)) -ne 0 ]]; then
+    log_entry "ERROR" "Unsafe ownership or mode: $SCRIPT_CANONICAL uid=$SCRIPT_UID mode=$SCRIPT_MODE"
+    json_response "error" "Privileged script ownership check failed" 1
+    exit 1
+fi
+
+# Determine how to execute the script
+EXEC_CMD=("$SCRIPT_CANONICAL")
+if [[ ! -x "$SCRIPT_CANONICAL" ]]; then
+    if [[ ! -r "$SCRIPT_CANONICAL" ]]; then
+        log_entry "ERROR" "Script not readable: $SCRIPT_CANONICAL"
+        json_response "error" "Script is not readable" 1
+        exit 1
+    fi
+    log_entry "WARN" "Script not executable, running with bash: $SCRIPT_CANONICAL"
+    EXEC_CMD=("/bin/bash" "$SCRIPT_CANONICAL")
+fi
+
+# Arguments can contain passwords, API keys, or other credentials. Log only the
+# trusted target and argument count; journaling argv would persist those secrets.
+log_entry "INFO" "Executing: ${EXEC_CMD[*]} (argc=${#SCRIPT_ARGS[@]})"
+
+# Execute the script and capture exit code. Network mutations get a root-owned
+# watchdog inside the privilege boundary. If the API worker disappears or its
+# local timeout fires, a late VPN operation cannot silently alter routes later.
+EXIT_CODE=0
+RUN_CMD=("${EXEC_CMD[@]}" "${SCRIPT_ARGS[@]}")
+if [[ "$SCRIPT_RELATIVE" == "settings/outbound_vpn.sh" ]]; then
+    case "${SCRIPT_ARGS[0]:-status}" in
+        up)        RUN_CMD=(/usr/bin/timeout --signal=TERM --kill-after=10s 175s "${RUN_CMD[@]}") ;;
+        down)      RUN_CMD=(/usr/bin/timeout --signal=TERM --kill-after=5s 40s "${RUN_CMD[@]}") ;;
+        reconcile) RUN_CMD=(/usr/bin/timeout --signal=TERM --kill-after=5s 25s "${RUN_CMD[@]}") ;;
+        status)    RUN_CMD=(/usr/bin/timeout --signal=TERM --kill-after=2s 15s "${RUN_CMD[@]}") ;;
+    esac
+elif [[ "$SCRIPT_RELATIVE" == "settings/stealth_vpn.sh" ]]; then
+    # These limits expire inside the root boundary before the backend's own
+    # request timeout. The root supervisor can therefore terminate privileged
+    # descendants which the unprivileged API worker is not allowed to signal.
+    TIMEOUT_HELPER="$SCRIPTS_BASE/privileged_timeout.py"
+    TIMEOUT_HELPER_UID="$(stat -c '%u' -- "$TIMEOUT_HELPER" 2>/dev/null || echo -1)"
+    TIMEOUT_HELPER_MODE="$(stat -c '%a' -- "$TIMEOUT_HELPER" 2>/dev/null || echo 777)"
+    if [[ ! -f "$TIMEOUT_HELPER" || -L "$TIMEOUT_HELPER" || "$TIMEOUT_HELPER_UID" != "0" \
+        || $((8#$TIMEOUT_HELPER_MODE & 8#022)) -ne 0 ]]; then
+        log_entry "ERROR" "Unsafe privileged timeout helper: $TIMEOUT_HELPER"
+        json_response "error" "Privileged timeout helper failed its ownership check" 1
+        exit 1
+    fi
+    DEADLINE_ARGS=()
+    if [[ -n "$OPERATION_DEADLINE_NS" ]]; then
+        DEADLINE_ARGS=(--deadline-monotonic-ns "$OPERATION_DEADLINE_NS")
+    fi
+    case "${SCRIPT_ARGS[0]:-status}" in
+        up)        RUN_CMD=(/usr/bin/python3 "$TIMEOUT_HELPER" --timeout 40 --kill-after 0.5 "${DEADLINE_ARGS[@]}" -- "${RUN_CMD[@]}") ;;
+        down)      RUN_CMD=(/usr/bin/python3 "$TIMEOUT_HELPER" --timeout 25 --kill-after 0.5 "${DEADLINE_ARGS[@]}" -- "${RUN_CMD[@]}") ;;
+        reconcile) RUN_CMD=(/usr/bin/python3 "$TIMEOUT_HELPER" --timeout 25 --kill-after 0.5 "${DEADLINE_ARGS[@]}" -- "${RUN_CMD[@]}") ;;
+        status)    RUN_CMD=(/usr/bin/python3 "$TIMEOUT_HELPER" --timeout 10 --kill-after 0.5 "${DEADLINE_ARGS[@]}" -- "${RUN_CMD[@]}") ;;
+    esac
+elif [[ "$SCRIPT_RELATIVE" == "setup/install_ffmpeg.sh" ]]; then
+    # Package operations must not outlive the API request indefinitely. The
+    # inner script also holds the shared package-manager lock.
+    RUN_CMD=(/usr/bin/timeout --signal=TERM --kill-after=15s 600s "${RUN_CMD[@]}")
+fi
+/usr/bin/env -i \
+    PATH="/usr/sbin:/usr/bin:/sbin:/bin" \
+    HOME="/root" \
+    USER="root" \
+    LOGNAME="root" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    SYSTEMD_PAGER="/bin/cat" \
+    PAGER="/bin/cat" \
+    LESSSECURE="1" \
+    SUDO_USER="${SUDO_USER:-easypi}" \
+    "${RUN_CMD[@]}" || EXIT_CODE=$?
+
+# Log result
+if [[ $EXIT_CODE -eq 0 ]]; then
+    log_entry "INFO" "Script completed successfully: $SCRIPT_CANONICAL (exit: $EXIT_CODE)"
+else
+    log_entry "ERROR" "Script failed: $SCRIPT_CANONICAL (exit: $EXIT_CODE)"
+fi
+
+exit $EXIT_CODE

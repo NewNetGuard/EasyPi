@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="29" fill="url(#grad1)"/>
+  <g fill="#ffffff" transform="translate(19.200000000000003, 19.200000000000003) scale(0.30000000000000004)">
+    <circle cx="256" cy="180" r="70" opacity="0.95"/>
+    <circle cx="200" cy="260" r="45" opacity="0.85"/>
+    <circle cx="312" cy="260" r="45" opacity="0.85"/>
+    <circle cx="176" cy="340" r="35" opacity="0.75"/>
+    <circle cx="256" cy="355" r="35" opacity="0.75"/>
+    <circle cx="336" cy="340" r="35" opacity="0.75"/>
+    <rect x="248" y="90" width="16" height="35" rx="4"/>
+    <ellipse cx="280" cy="100" rx="22" ry="14" transform="rotate(30 280 100)"/>
+  </g>
+  <text x="96" y="176.64000000000001" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="15.36" font-weight="600" fill="#ffffff" opacity="0.9">EasyPi</text>
+</svg>

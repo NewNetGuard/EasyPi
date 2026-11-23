@@ -1,0 +1,62 @@
+# Human-maintained runtime constraints. Production uses requirements.lock.
+# Regenerate the combined backend/NetProtection lock with the command recorded
+# at the top of that file.
+fastapi==0.139.2
+uvicorn[standard]==0.23.2
+pydantic==2.12.4
+pydantic-settings==2.0.3
+SQLAlchemy==2.0.35
+aiosqlite==0.20.0
+psycopg[binary]>=3.2,<3.3
+alembic==1.13.0
+python-dotenv==1.2.2
+python-json-logger==2.0.7
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+PyJWT==2.13.0
+cryptography==50.0.2
+httpx==0.25.2
+aiohttp>=3.14.3
+psutil==7.1.3
+python-multipart>=0.0.32
+paramiko>=5.0.0
+python-telegram-bot==20.7
+Pillow==12.3.0
+qrcode==7.4.2
+pywebpush>=2.4.0
+email-validator>=2.1.0
+
+# NetProtection DNS dependencies
+dnspython>=2.4.0
+httpx[http2]>=0.25.0
+tomli-w>=1.0.0
+
+# WebRTC signaling proxy (go2rtc)
+websockets>=17.1
+
+# go2rtc config management
+PyYAML>=6.0
+
+# Security floors for transitive runtime dependencies. Keeping these explicit
+# also upgrades an existing environment instead of merely accepting stale
+# versions that satisfy their parent packages' broad lower bounds.
+click>=8.3.3
+h2>=4.4.1
+Mako>=1.3.12
+pyasn1>=0.6.4
+urllib3>=2.7.0
+
+# Optional: Redis cache (not required, uses in-memory fallback)
+# redis>=5.0.0
+
+# Network interface discovery (optional fallback code is used on Windows, where
+# netifaces has no Python 3.12 wheel and otherwise requires a C++ toolchain).
+netifaces==0.11.0; sys_platform != "win32"
+
+# ONVIF PTZ: XXE-safe XML parsing of camera SOAP responses
+defusedxml==0.7.1
+
+# Opt-in Prism TLS Endpoint Bridge. Bundled but disabled by default.
+aioquic==1.7.0
+pylsqpack==1.0.0
+hpack==4.2.0

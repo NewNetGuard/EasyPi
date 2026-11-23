@@ -1,0 +1,120 @@
+{
+ "bulk_capped_1": {
+  "big_ms": {
+   "max": 75.27,
+   "n": 1600,
+   "p50": 36.79,
+   "p99": 69.48
+  },
+  "down_records": 1262,
+  "mb_s": 15.231305986509554,
+  "ok": true,
+  "top": "30x1260 225x1 26x1",
+  "wu_records_30": 1260
+ },
+ "bulk_capped_2": {
+  "big_ms": {
+   "max": 74.99,
+   "n": 1600,
+   "p50": 35.91,
+   "p99": 68.6
+  },
+  "down_records": 1247,
+  "mb_s": 15.20168933411913,
+  "ok": true,
+  "top": "30x1245 223x1 26x1",
+  "wu_records_30": 1245
+ },
+ "bulk_capped_3": {
+  "big_ms": {
+   "max": 73.58,
+   "n": 1600,
+   "p50": 36.87,
+   "p99": 67.69
+  },
+  "down_records": 1266,
+  "mb_s": 15.257001976180549,
+  "ok": true,
+  "top": "30x1264 224x1 26x1",
+  "wu_records_30": 1264
+ },
+ "bulk_free_1": {
+  "big_ms": {
+   "max": 55.51,
+   "n": 1600,
+   "p50": 52.76,
+   "p99": 55.43
+  },
+  "down_records": 164,
+  "mb_s": 14.861379701887177,
+  "ok": true,
+  "top": "30x162 26x1 223x1",
+  "wu_records_30": 162
+ },
+ "bulk_free_2": {
+  "big_ms": {
+   "max": 54.22,
+   "n": 1600,
+   "p50": 51.86,
+   "p99": 54.14
+  },
+  "down_records": 169,
+  "mb_s": 15.078957558503896,
+  "ok": true,
+  "top": "30x167 225x1 26x1",
+  "wu_records_30": 167
+ },
+ "interactive": {
+  "bulk_mb_s": 14.954525421977277,
+  "down_records": 1362,
+  "ok": true,
+  "probe_ms": {
+   "max": 34.02,
+   "n": 83,
+   "p50": 16.77,
+   "p99": 34.02
+  },
+  "top": "30x1357 26x2 43x1 225x1 219x1",
+  "wu_records_30": 1357
+ },
+ "last_bare_end": {
+  "ok": true
+ },
+ "last_last_byte": {
+  "ok": true
+ },
+ "pauses": {
+  "ok": true,
+  "small_ms": {
+   "max": 16.01,
+   "n": 2,
+   "p50": 16.01,
+   "p99": 16.01
+  }
+ },
+ "slow_3mb": {
+  "big_ms": {
+   "max": 1738.56,
+   "n": 1600,
+   "p50": 1446.7,
+   "p99": 1704.61
+  },
+  "down_records": 171,
+  "mb_s": 2.9874501855282927,
+  "ok": true,
+  "top": "30x169 229x1 26x1",
+  "wu_records_30": 169
+ },
+ "trickle": {
+  "down_records": 403,
+  "ok": true,
+  "small_ms": {
+   "max": 17.67,
+   "n": 400,
+   "p50": 16.16,
+   "p99": 17.27
+  },
+  "top": "30x401 221x1 26x1",
+  "wu_records_30": 401
+ }
+}

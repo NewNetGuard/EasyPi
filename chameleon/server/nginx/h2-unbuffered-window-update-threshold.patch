@@ -1,0 +1,44 @@
+--- a/src/http/v2/ngx_http_v2.c
++++ b/src/http/v2/ngx_http_v2.c
+@@ -12,6 +12,15 @@
+ #include <ngx_http_header_count.hh>
+ 
+ 
++/*
++ * An unbuffered request body returns flow-control credit only when at least
++ * this much (or half the body buffer, if smaller) can be returned at once.
++ * The peer then always keeps at least half the buffer of credit, so it never
++ * waits for an update, while the number of WINDOW_UPDATE frames drops from
++ * one per drained read to one per this many bytes.
++ */
++#define NGX_HTTP_V2_UNBUFFERED_WINDOW_UPDATE  (256 * 1024)
++
+ /* errors */
+ #define NGX_HTTP_V2_NO_ERROR                     0x0
+ #define NGX_HTTP_V2_PROTOCOL_ERROR               0x1
+@@ -4374,6 +4383,12 @@
+         return;
+     }
+ 
++    if (window - stream->recv_window
++        < ngx_min(window / 2, NGX_HTTP_V2_UNBUFFERED_WINDOW_UPDATE))
++    {
++        return;
++    }
++
+     if (ngx_http_v2_send_window_update(h2c, stream->node->id,
+                                        window - stream->recv_window)
+         == NGX_ERROR)
+@@ -4467,6 +4482,12 @@
+         return NGX_AGAIN;
+     }
+ 
++    if (window - stream->recv_window
++        < ngx_min(window / 2, NGX_HTTP_V2_UNBUFFERED_WINDOW_UPDATE))
++    {
++        return NGX_AGAIN;
++    }
++
+     if (ngx_http_v2_send_window_update(h2c, stream->node->id,
+                                        window - stream->recv_window)
+         == NGX_ERROR)

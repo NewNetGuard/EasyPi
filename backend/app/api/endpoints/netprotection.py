@@ -1,0 +1,240 @@
+"""Stable compatibility facade for the modular NetProtection API."""
+
+from fastapi import APIRouter
+
+from .netprotection_api import context as _context
+from .netprotection_api import service_control as _service_control
+from .netprotection_api import dashboard as _dashboard
+from .netprotection_api import policy as _policy
+from .netprotection_api import devices as _devices
+from .netprotection_api import blocklists as _blocklists
+from .netprotection_api import schedules as _schedules
+from .netprotection_api import settings as _settings
+from .netprotection_api import compatibility as _compatibility
+
+router = APIRouter(prefix="/netprotection", tags=["NetProtection"])
+
+router.include_router(_service_control.router)
+router.include_router(_dashboard.router)
+router.include_router(_policy.router)
+router.include_router(_devices.router)
+router.include_router(_blocklists.router)
+router.include_router(_schedules.router)
+router.include_router(_settings.router)
+router.include_router(_compatibility.router)
+
+# Preserve the original module-level support objects and request models.
+BYPASS_ALERT_TTL_SEC = _context.BYPASS_ALERT_TTL_SEC
+PORNOGRAPHY_PARENTAL_SHORTCUT = _context.PORNOGRAPHY_PARENTAL_SHORTCUT
+ConfigUpdate = _context.ConfigUpdate
+DeviceRuleRequest = _context.DeviceRuleRequest
+DeviceUpdate = _context.DeviceUpdate
+DomainAction = _context.DomainAction
+EncryptedDnsUpdate = _context.EncryptedDnsUpdate
+FirewallToggleRequest = _context.FirewallToggleRequest
+MatcherCreate = _context.MatcherCreate
+MatcherUpdate = _context.MatcherUpdate
+MonitoringSettingsRequest = _context.MonitoringSettingsRequest
+ShieldProfileSet = _context.ShieldProfileSet
+ThreatBanRequest = _context.ThreatBanRequest
+ThreatUnbanRequest = _context.ThreatUnbanRequest
+_record_netprotection_event = _context._record_netprotection_event
+logger = _context.logger
+firewall_service = _context.firewall_service
+netprotection_service = _context.netprotection_service
+operation_event_service = _context.operation_event_service
+sanitize_mac = _context.sanitize_mac
+threat_service = _context.threat_service
+
+# Preserve direct imports used by integrations and regression tests.
+get_status = _service_control.get_status
+get_full_status = _service_control.get_full_status
+get_config = _service_control.get_config
+update_config = _service_control.update_config
+get_encrypted_dns = _service_control.get_encrypted_dns
+update_encrypted_dns = _service_control.update_encrypted_dns
+generate_encrypted_dns_certs = _service_control.generate_encrypted_dns_certs
+TrustedCertRequest = _service_control.TrustedCertRequest
+get_trusted_cert_status = _service_control.get_trusted_cert_status
+setup_trusted_cert = _service_control.setup_trusted_cert
+start_service = _service_control.start_service
+stop_service = _service_control.stop_service
+TransparentDnsRequest = _service_control.TransparentDnsRequest
+toggle_transparent_dns = _service_control.toggle_transparent_dns
+enable_protection = _service_control.enable_protection
+disable_protection = _service_control.disable_protection
+get_dashboard = _dashboard.get_dashboard
+TelegramAlertConfig = _dashboard.TelegramAlertConfig
+get_telegram_alert_config = _dashboard.get_telegram_alert_config
+set_telegram_alert_config = _dashboard.set_telegram_alert_config
+test_telegram_alert = _dashboard.test_telegram_alert
+VpnConfigImport = _dashboard.VpnConfigImport
+OpenVpnCredentials = _dashboard.OpenVpnCredentials
+RoutingConflictConfirmation = _dashboard.RoutingConflictConfirmation
+_routing_operation_result = _dashboard._routing_operation_result
+outbound_vpn_status = _dashboard.outbound_vpn_status
+outbound_vpn_import = _dashboard.outbound_vpn_import
+outbound_vpn_enable = _dashboard.outbound_vpn_enable
+outbound_vpn_credentials = _dashboard.outbound_vpn_credentials
+outbound_vpn_delete_credentials = _dashboard.outbound_vpn_delete_credentials
+outbound_vpn_disable = _dashboard.outbound_vpn_disable
+outbound_vpn_delete = _dashboard.outbound_vpn_delete
+VpnDevice = _dashboard.VpnDevice
+VpnTargets = _dashboard.VpnTargets
+outbound_vpn_targets = _dashboard.outbound_vpn_targets
+StealthClientCfg = _dashboard.StealthClientCfg
+StealthServerCfg = _dashboard.StealthServerCfg
+StealthHostKeyTrust = _dashboard.StealthHostKeyTrust
+StealthTargets = _dashboard.StealthTargets
+_stealth = _dashboard._stealth
+_stealth_operation_result = _dashboard._stealth_operation_result
+stealth_status = _dashboard.stealth_status
+stealth_save_client = _dashboard.stealth_save_client
+stealth_gen_psk = _dashboard.stealth_gen_psk
+stealth_gen_reality = _dashboard.stealth_gen_reality
+stealth_enable = _dashboard.stealth_enable
+stealth_disable = _dashboard.stealth_disable
+stealth_targets = _dashboard.stealth_targets
+stealth_reset_profile = _dashboard.stealth_reset_profile
+stealth_delete = _dashboard.stealth_delete
+stealth_save_server = _dashboard.stealth_save_server
+stealth_configure_domain_tls = _dashboard.stealth_configure_domain_tls
+stealth_remove_domain_tls = _dashboard.stealth_remove_domain_tls
+stealth_check_ssh = _dashboard.stealth_check_ssh
+stealth_trust_host_key = _dashboard.stealth_trust_host_key
+stealth_deploy = _dashboard.stealth_deploy
+stealth_stop_server = _dashboard.stealth_stop_server
+stealth_uninstall_server = _dashboard.stealth_uninstall_server
+stealth_server_logs = _dashboard.stealth_server_logs
+get_onboarding = _dashboard.get_onboarding
+get_analytics = _dashboard.get_analytics
+get_device_analytics = _dashboard.get_device_analytics
+get_stats = _dashboard.get_stats
+get_verdicts = _policy.get_verdicts
+get_verdicts_stats = _policy.get_verdicts_stats
+clear_verdicts = _policy.clear_verdicts
+update_query_log_config = _policy.update_query_log_config
+get_verdict_detail = _policy.get_verdict_detail
+ShadowDomainAction = _policy.ShadowDomainAction
+get_shadow_domains = _policy.get_shadow_domains
+get_shadow_stats = _policy.get_shadow_stats
+shadow_domain_action = _policy.shadow_domain_action
+get_matchers = _policy.get_matchers
+create_matcher = _policy.create_matcher
+update_matcher = _policy.update_matcher
+delete_matcher = _policy.delete_matcher
+get_whitelist = _policy.get_whitelist
+add_to_whitelist = _policy.add_to_whitelist
+remove_from_whitelist = _policy.remove_from_whitelist
+get_blacklist = _policy.get_blacklist
+add_to_blacklist = _policy.add_to_blacklist
+remove_from_blacklist = _policy.remove_from_blacklist
+get_shield_profiles = _devices.get_shield_profiles
+set_shield_profile = _devices.set_shield_profile
+get_devices = _devices.get_devices
+DeviceCreate = _devices.DeviceCreate
+create_device = _devices.create_device
+update_device = _devices.update_device
+set_device_shield = _devices.set_device_shield
+delete_device = _devices.delete_device
+sync_parental_blocklist = _devices.sync_parental_blocklist
+get_threat_stats = _devices.get_threat_stats
+get_blocklist_info = _devices.get_blocklist_info
+generate_blocklist = _devices.generate_blocklist
+cleanup_threats = _devices.cleanup_threats
+CustomSourceAdd = _blocklists.CustomSourceAdd
+get_blocklist_status = _blocklists.get_blocklist_status
+get_verified_sources = _blocklists.get_verified_sources
+set_verified_source_enabled = _blocklists.set_verified_source_enabled
+generate_blocklists = _blocklists.generate_blocklists
+get_use_custom_blocklist = _blocklists.get_use_custom_blocklist
+set_use_custom_blocklist = _blocklists.set_use_custom_blocklist
+clear_blocklists = _blocklists.clear_blocklists
+get_generation_progress = _blocklists.get_generation_progress
+get_custom_sources = _blocklists.get_custom_sources
+add_custom_source = _blocklists.add_custom_source
+upload_custom_blocklist = _blocklists.upload_custom_blocklist
+remove_custom_source = _blocklists.remove_custom_source
+set_custom_source_enabled = _blocklists.set_custom_source_enabled
+get_metrics = _blocklists.get_metrics
+ScheduleRule = _schedules.ScheduleRule
+ScheduleCreate = _schedules.ScheduleCreate
+ScheduleUpdate = _schedules.ScheduleUpdate
+get_schedules = _schedules.get_schedules
+get_schedule_enforcement_status = _schedules.get_schedule_enforcement_status
+create_schedule = _schedules.create_schedule
+get_schedule = _schedules.get_schedule
+update_schedule = _schedules.update_schedule
+delete_schedule = _schedules.delete_schedule
+toggle_schedule = _schedules.toggle_schedule
+get_devices_with_baseline = _schedules.get_devices_with_baseline
+get_device_baseline = _schedules.get_device_baseline
+get_device_anomalies = _schedules.get_device_anomalies
+IPv6SettingsUpdate = _settings.IPv6SettingsUpdate
+FailSafeSettingsUpdate = _settings.FailSafeSettingsUpdate
+ShadowModeSettingsUpdate = _settings.ShadowModeSettingsUpdate
+get_all_settings = _settings.get_all_settings
+get_ipv6_settings = _settings.get_ipv6_settings
+get_ipv6_status = _settings.get_ipv6_status
+update_ipv6_settings = _settings.update_ipv6_settings
+get_failsafe_settings = _settings.get_failsafe_settings
+update_failsafe_settings = _settings.update_failsafe_settings
+FailSafeTrigger = _settings.FailSafeTrigger
+trigger_failsafe = _settings.trigger_failsafe
+get_shadow_mode_settings = _settings.get_shadow_mode_settings
+update_shadow_mode_settings = _settings.update_shadow_mode_settings
+AppBlockingUpdate = _settings.AppBlockingUpdate
+get_blockable_apps = _settings.get_blockable_apps
+get_device_app_blocking_status = _settings.get_device_app_blocking_status
+set_device_blocked_apps = _settings.set_device_blocked_apps
+sync_app_blocking = _settings.sync_app_blocking
+update_app_ip_lists = _settings.update_app_ip_lists
+_is_private_ip = _compatibility._is_private_ip
+_format_firewall_rules = _compatibility._format_firewall_rules
+get_firewall_rules_compat = _compatibility.get_firewall_rules_compat
+add_firewall_rule_compat = _compatibility.add_firewall_rule_compat
+delete_firewall_rule_compat = _compatibility.delete_firewall_rule_compat
+toggle_firewall_compat = _compatibility.toggle_firewall_compat
+get_parental_status_compat = _compatibility.get_parental_status_compat
+toggle_parental_compat = _compatibility.toggle_parental_compat
+toggle_safesearch_compat = _compatibility.toggle_safesearch_compat
+get_parental_clients_compat = _compatibility.get_parental_clients_compat
+get_whatsapp_block_mode_compat = _compatibility.get_whatsapp_block_mode_compat
+set_whatsapp_block_mode_compat = _compatibility.set_whatsapp_block_mode_compat
+add_parental_client_compat = _compatibility.add_parental_client_compat
+update_parental_client_compat = _compatibility.update_parental_client_compat
+delete_parental_client_compat = _compatibility.delete_parental_client_compat
+restore_parental_client_internet_compat = (
+    _compatibility.restore_parental_client_internet_compat
+)
+get_blocked_services_list_compat = _compatibility.get_blocked_services_list_compat
+get_fail_closed_status_compat = _compatibility.get_fail_closed_status_compat
+restore_fail_closed_ip_compat = _compatibility.restore_fail_closed_ip_compat
+get_bypass_alerts_compat = _compatibility.get_bypass_alerts_compat
+get_bypass_blocked_compat = _compatibility.get_bypass_blocked_compat
+get_bypass_history_compat = _compatibility.get_bypass_history_compat
+clear_bypass_history_compat = _compatibility.clear_bypass_history_compat
+set_bypass_mode_compat = _compatibility.set_bypass_mode_compat
+acknowledge_bypass_alert_compat = _compatibility.acknowledge_bypass_alert_compat
+_managed_client_for_device = _compatibility._managed_client_for_device
+get_device_rules_compat = _compatibility.get_device_rules_compat
+add_device_rule_compat = _compatibility.add_device_rule_compat
+remove_device_rule_compat = _compatibility.remove_device_rule_compat
+get_threats_compat = _compatibility.get_threats_compat
+clear_threats_compat = _compatibility.clear_threats_compat
+ban_ip_compat = _compatibility.ban_ip_compat
+unban_ip_compat = _compatibility.unban_ip_compat
+get_banned_ips_compat = _compatibility.get_banned_ips_compat
+get_monitoring_status_compat = _compatibility.get_monitoring_status_compat
+start_monitoring_compat = _compatibility.start_monitoring_compat
+stop_monitoring_compat = _compatibility.stop_monitoring_compat
+update_monitoring_settings_compat = _compatibility.update_monitoring_settings_compat
+get_dns_rewrites_compat = _compatibility.get_dns_rewrites_compat
+add_dns_rewrite_compat = _compatibility.add_dns_rewrite_compat
+delete_dns_rewrite_compat = _compatibility.delete_dns_rewrite_compat
+clear_dns_cache_compat = _compatibility.clear_dns_cache_compat
+test_upstream_dns_compat = _compatibility.test_upstream_dns_compat
+get_upstream_servers = _compatibility.get_upstream_servers
+set_upstream_servers = _compatibility.set_upstream_servers
+reset_statistics_compat = _compatibility.reset_statistics_compat
+reset_all_settings_compat = _compatibility.reset_all_settings_compat

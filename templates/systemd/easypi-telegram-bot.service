@@ -1,0 +1,28 @@
+[Unit]
+Description=EasyPi Telegram Bot
+After=network.target easypi-backend.service
+Requires=easypi-backend.service
+
+[Service]
+Type=simple
+User=easypi
+Group=easypi
+WorkingDirectory=/opt/EasyPi/backend
+Environment="PATH=/opt/EasyPi/backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/opt/EasyPi/backend"
+ExecStart=/opt/EasyPi/backend/venv/bin/python telegram_bot_runner.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=easypi-telegram-bot
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/EasyPi/data /opt/EasyPi/logs /opt/EasyPi/backend/data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,43 @@
+[Unit]
+Description=EasyPi Prism TLS Endpoint Bridge (experimental shadow only)
+After=network.target
+ConditionPathExists=/run/easypi-prism-tls/enabled
+
+[Service]
+Type=exec
+User=easypi-prism-tls
+Group=easypi-prism-tls
+EnvironmentFile=/etc/default/easypi-prism-endpoint-bridge
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/EasyPi/backend/bin/easypi-backend --prism-tls-shadow --interface ${PRISM_TLS_INTERFACE} --client-ip ${PRISM_TLS_CLIENT_IP} --client-port ${PRISM_TLS_CLIENT_PORT} --server-ip ${PRISM_TLS_SERVER_IP} --server-port ${PRISM_TLS_SERVER_PORT} --transport ${PRISM_TLS_TRANSPORT} --session ${PRISM_TLS_SESSION} --enable-file /run/easypi-prism-tls/enabled --seconds 300
+StandardInput=socket
+StandardOutput=journal
+StandardError=journal
+Restart=no
+KillMode=control-group
+TimeoutStopSec=3
+CPUQuota=25%
+MemoryHigh=192M
+MemoryMax=512M
+MemorySwapMax=0
+TasksMax=24
+LimitCORE=0
+LimitNOFILE=256
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_NET_RAW
+AmbientCapabilities=CAP_NET_RAW
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_PACKET AF_INET AF_INET6 AF_NETLINK
+# No install target: only an explicitly opened private local socket activates it.

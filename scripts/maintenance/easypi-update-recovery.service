@@ -1,0 +1,15 @@
+[Unit]
+Description=EasyPi update recovery (roll back an interrupted self-update on boot)
+DefaultDependencies=no
+After=local-fs.target
+Before=easypi-backend.service network-pre.target
+# Only do anything when a self-update was interrupted (marker left behind).
+ConditionPathExists=/opt/EasyPi/.update-in-progress
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/bin/bash /opt/EasyPi/scripts/maintenance/apply_update.sh --recover
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+# Extra WhatsApp-only IPs (observed in the field)
+157.240.253.13/32
+157.240.253.60/32
+157.240.253.61/32

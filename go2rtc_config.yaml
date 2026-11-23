@@ -1,0 +1,20 @@
+# go2rtc configuration
+app:
+  modules: [api, ws, rtsp, mp4]
+
+api:
+  listen: "127.0.0.1:1984"
+  allow_paths: [/, /api, /api/streams, /api/ws]
+
+# RTSP server configuration
+rtsp:
+  listen: "127.0.0.1:8554"
+
+# Logging
+log:
+  level: info
+  format: text
+
+# Reserved credential-free placeholder used by camera path discovery.
+streams:
+  easypi_discovery: "rtsp://127.0.0.1:9/unavailable"

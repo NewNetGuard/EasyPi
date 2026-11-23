@@ -1,0 +1,27 @@
+[
+  {
+    "id": "wireguard",
+    "name": "WireGuard",
+    "description": "Fast, modern, secure VPN tunnel",
+    "category": "Network",
+    "icon": "🔐",
+    "version": "1.0",
+    "features": [
+      "VPN tunnel",
+      "Peer management",
+      "QR codes",
+      "Mobile support"
+    ],
+    "requirements": {
+      "ram": "512MB",
+      "disk": "1GB",
+      "ports": [
+        "51820"
+      ]
+    },
+    "links": {
+      "website": "https://www.wireguard.com",
+      "documentation": "https://www.wireguard.com/quickstart/"
+    }
+  }
+]

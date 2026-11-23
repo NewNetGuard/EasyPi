@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  background: #f5f6f8;
+  color: #20242a;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+}
+
+main {
+  width: min(34rem, calc(100% - 3rem));
+  border-top: 3px solid #4b5563;
+  padding: 1.5rem 0;
+}
+
+h1 {
+  margin: 0 0 0.6rem;
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  color: #667085;
+  line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    background: #16181c;
+    color: #eef0f3;
+  }
+
+  p {
+    color: #a6acb5;
+  }
+}

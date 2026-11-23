@@ -1,0 +1,39 @@
+[Unit]
+Description=EasyPi runtime IPv6 policy guard
+After=network-online.target
+Wants=network-online.target
+Before=easypi-netprotection.service easypi-backend.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=root
+Group=easypi
+ExecStartPre=/bin/bash /opt/EasyPi/scripts/security/ipv6_policy_guard.sh --establish
+ExecStart=/bin/bash /opt/EasyPi/scripts/security/ipv6_policy_guard.sh --monitor
+Environment=EASYPI_GROUP=easypi
+Environment=EASYPI_IPV6_STATE_DIR=/var/lib/easypi/security
+Environment=EASYPI_IPV6_LOCK_FILE=/run/lock/easypi-ipv6-policy.lock
+UMask=0077
+StateDirectory=easypi/security
+StateDirectoryMode=0750
+Restart=on-failure
+RestartSec=2s
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=no
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ReadWritePaths=/run/lock
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_DAC_OVERRIDE CAP_CHOWN CAP_FOWNER
+RestrictAddressFamilies=AF_UNIX AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

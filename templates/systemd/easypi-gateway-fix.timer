@@ -1,0 +1,11 @@
+[Unit]
+Description=EasyPi Gateway Loop Fix Timer
+After=network-online.target
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=60
+Unit=easypi-gateway-fix.service
+
+[Install]
+WantedBy=timers.target

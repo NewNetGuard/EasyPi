@@ -1,0 +1,35 @@
+[Unit]
+Description=EasyPi Chameleon Mobile Link VPS Relay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=easypi-mobile-link
+Group=easypi-mobile-link
+UMask=0077
+ExecStart=/opt/easypi-mobile-link/chameleon-mobile-link-relay -config /etc/easypi-mobile-link/relay.json
+Restart=on-failure
+RestartSec=5s
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

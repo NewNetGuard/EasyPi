@@ -1,0 +1,12 @@
+#!/bin/sh
+# Re-evaluate the fail-closed IPv6 boundary immediately after network changes.
+case "${2:-}" in
+  up|down|dhcp4-change|dhcp6-change|connectivity-change|reapply)
+    if systemctl is-active --quiet easypi-ipv6-policy-guard.service; then
+      systemctl kill --kill-who=main --signal=SIGUSR1 easypi-ipv6-policy-guard.service >/dev/null 2>&1 || true
+    else
+      systemctl start --no-block easypi-ipv6-policy-guard.service >/dev/null 2>&1 || true
+    fi
+    ;;
+esac
+exit 0

@@ -1,0 +1,30 @@
+[Unit]
+Description=EasyPi Mobile Home Tunnel Relay Agent
+After=network-online.target easypi-mobile-home-tunnel.service
+Wants=network-online.target easypi-mobile-home-tunnel.service
+
+[Service]
+Type=simple
+User=easypi-mobile-link
+Group=easypi-mobile-link
+UMask=0077
+ExecStart=/opt/EasyPi/bin/chameleon-mobile-link-agent -config /etc/easypi-mobile-link/tunnel-agent.json
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

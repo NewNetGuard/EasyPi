@@ -1,0 +1,78 @@
+{
+  "kernel": "6.18.50+rpt-rpi-2712",
+  "libpcap": "1.10.5",
+  "immediate_ring": "TPACKET_V2",
+  "buffered_ring": "TPACKET_V3",
+  "comparison": [
+    {
+      "immediate": true,
+      "sent": 128,
+      "application_received": 128,
+      "capture_read": 32,
+      "ps_recv": 256,
+      "ps_drop": 192,
+      "ps_ifdrop": 0,
+      "buffer_bytes": 4194304,
+      "snaplen": 65575,
+      "reader_delayed_ms": 10,
+      "payload_bytes": 1200
+    },
+    {
+      "immediate": true,
+      "sent": 512,
+      "application_received": 512,
+      "capture_read": 32,
+      "ps_recv": 1024,
+      "ps_drop": 960,
+      "ps_ifdrop": 0,
+      "buffer_bytes": 4194304,
+      "snaplen": 65575,
+      "reader_delayed_ms": 10,
+      "payload_bytes": 1200
+    },
+    {
+      "immediate": false,
+      "sent": 128,
+      "application_received": 128,
+      "capture_read": 128,
+      "ps_recv": 256,
+      "ps_drop": 0,
+      "ps_ifdrop": 0,
+      "buffer_bytes": 4194304,
+      "snaplen": 65575,
+      "reader_delayed_ms": 10,
+      "payload_bytes": 1200
+    },
+    {
+      "immediate": false,
+      "sent": 512,
+      "application_received": 512,
+      "capture_read": 512,
+      "ps_recv": 1024,
+      "ps_drop": 0,
+      "ps_ifdrop": 0,
+      "buffer_bytes": 4194304,
+      "snaplen": 65575,
+      "reader_delayed_ms": 10,
+      "payload_bytes": 1200
+    }
+  ],
+  "pi_tests": {
+    "passed": 27,
+    "failed": 0
+  },
+  "pi_same_cgroup_limits_test": {
+    "passed": 3,
+    "cpu_quota_percent": 25,
+    "memory_max_mib": 256
+  },
+  "phone_test_after_fix": "not_run",
+  "hardware_eth0_counters_at_diagnosis": {
+    "rx_errors": 0,
+    "rx_dropped": 0,
+    "rx_missed": 0,
+    "tx_errors": 0,
+    "tx_dropped": 0
+  },
+  "limits": "Loopback burst reproduction; no claim to attribute every historical dropped packet"
+}

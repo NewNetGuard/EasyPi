@@ -1,0 +1,29 @@
+[Unit]
+Description=EasyPi Installer Job %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/EasyPi
+ExecStart=/bin/bash /opt/EasyPi/scripts/services/installer_dispatch.sh %i
+TimeoutStartSec=3600
+NoNewPrivileges=yes
+# APT intentionally drops privileges to the _apt user for network access.
+AmbientCapabilities=CAP_SETUID
+PrivateTmp=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+# Package installation must be able to drop to _apt and preserve package mode bits.
+# Keep NoNewPrivileges and the remaining namespace/capability hardening enabled.
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,363 @@
+#!/bin/bash
+# EasyPi Chameleon nginx on the VPS (run as root; installed by EasyPi's
+# "Deploy & Start" as /usr/local/sbin/easypi-chameleon-nginx).
+#
+# Keeps Ubuntu's packaged nginx with one patch added: fewer HTTP/2
+# WINDOW_UPDATE frames for unbuffered request bodies
+# (h2-unbuffered-window-update-threshold.patch). The patch is always built
+# from the source of the nginx package that is installed, so Ubuntu's security
+# fixes stay in: /usr/sbin/nginx is diverted, the packaged binary lands at
+# /usr/sbin/nginx.distrib, and after every package change the packaged binary
+# runs at once while the patch is rebuilt for it in the background. When the
+# patch cannot be built the packaged binary simply stays in place.
+#
+#   install  divert, tune limits, install the apt hook, build and install
+#   refresh  apt hook: on a new packaged binary run it, then rebuild
+#   rebuild  build and install the patch for the installed package
+#   status   print the state
+#   remove   undo everything; the packaged binary is back at /usr/sbin/nginx
+set -euo pipefail
+umask 022
+
+NAME=easypi-chameleon-nginx
+SELF=/usr/local/sbin/$NAME
+SHARE=/usr/local/share/$NAME
+PATCH=$SHARE/h2-unbuffered-window-update-threshold.patch
+STATE_DIR=/var/lib/easypi-chameleon/nginx
+STATE=$STATE_DIR/state
+BUILD_DIR=$STATE_DIR/build
+APT_DIR=$STATE_DIR/apt-source
+NGINX=/usr/sbin/nginx
+DISTRIB=/usr/sbin/nginx.distrib
+LOCK=/run/$NAME.lock
+HOOK=/etc/apt/apt.conf.d/80$NAME
+DROPIN_DIR=/etc/systemd/system/nginx.service.d
+DROPIN=$DROPIN_DIR/$NAME.conf
+REBUILD_UNIT=$NAME-rebuild.service
+REBUILD_UNIT_FILE=/etc/systemd/system/$REBUILD_UNIT
+REBUILD_TIMER=$NAME-rebuild.timer
+REBUILD_TIMER_FILE=/etc/systemd/system/$REBUILD_TIMER
+NGINX_CONF=/etc/nginx/nginx.conf
+BUILD_DEPS=(build-essential dpkg-dev libpcre2-dev libssl-dev zlib1g-dev libcrypt-dev)
+WORKER_CONNECTIONS=4096
+WORKER_NOFILE=16384
+APT_LOCK_WAIT=(-o DPkg::Lock::Timeout=900)
+
+log() { echo "$NAME: $*" >&2; logger -t "$NAME" -- "$*" 2>/dev/null || true; }
+die() { log "error: $*"; exit 1; }
+
+state_get() { [[ -f "$STATE" ]] && sed -n "s/^$1=//p" "$STATE" | tail -1 || true; }
+state_write() { # key=value ...
+    install -d -m 0700 "$STATE_DIR"
+    local tmp; tmp="$(mktemp "$STATE_DIR/.state.XXXXXX")"
+    printf '%s\n' "$@" > "$tmp"
+    mv -f -- "$tmp" "$STATE"
+}
+
+sha() { sha256sum "$1" | cut -d' ' -f1; }
+package_version() { dpkg-query -W -f='${Version}' nginx 2>/dev/null; }
+diverted() { dpkg-divert --list "$NGINX" 2>/dev/null | grep -q "by easypi-chameleon"; }
+
+restart_nginx() {
+    # A new binary only runs after a restart; nginx that was stopped stays so.
+    if systemctl is-active --quiet nginx.service; then
+        systemctl restart nginx.service
+        systemctl is-active --quiet nginx.service
+    fi
+}
+
+place_binary() { # $1 = binary to run as /usr/sbin/nginx
+    install -o root -g root -m 0755 "$1" "$NGINX.$NAME-new"
+    mv -f -- "$NGINX.$NAME-new" "$NGINX"
+}
+
+use_packaged() { # $1 = reason
+    place_binary "$DISTRIB"
+    state_write "VERSION=$(package_version)" "PATCHED=0" "DISTRIB_SHA=$(sha "$DISTRIB")" \
+        "PATCH_SHA=" "REASON=$1"
+    restart_nginx || die "packaged nginx did not start"
+    log "running the packaged nginx ($1)"
+}
+
+ensure_divert() {
+    diverted && return 0
+    [[ -x "$NGINX" ]] || die "nginx is not installed"
+    dpkg-divert --package easypi-chameleon --divert "$DISTRIB" --rename --add "$NGINX" >/dev/null
+    # The running nginx keeps its inode; put the packaged binary back at once.
+    place_binary "$DISTRIB"
+}
+
+# Limits: 4096 connections per worker (each tunnel stream needs two), file
+# descriptors to match, and a memory ceiling so stalled 1m request buffers can
+# never take the VPS down (the worker is replaced by the master instead).
+tune_limits() {
+    local backup="$NGINX_CONF.$NAME-backup"
+    cp -a "$NGINX_CONF" "$backup"
+    python3 - "$NGINX_CONF" "$WORKER_CONNECTIONS" "$WORKER_NOFILE" <<'PY'
+import re, sys
+path, connections, nofile = sys.argv[1], sys.argv[2], sys.argv[3]
+text = open(path, encoding="utf-8").read()
+events = re.search(r"(?m)^\s*events\s*\{", text)
+if not events:
+    sys.exit("nginx.conf has no events block")
+if re.search(r"(?m)^\s*worker_connections\s+\d+\s*;", text):
+    text = re.sub(r"(?m)^(\s*worker_connections\s+)\d+(\s*;)", r"\g<1>" + connections + r"\g<2>", text)
+else:
+    text = text[:events.end()] + "\n\tworker_connections " + connections + ";" + text[events.end():]
+if re.search(r"(?m)^\s*worker_rlimit_nofile\s+\d+\s*;", text):
+    text = re.sub(r"(?m)^(\s*worker_rlimit_nofile\s+)\d+(\s*;)", r"\g<1>" + nofile + r"\g<2>", text)
+else:
+    text = re.sub(r"(?m)^(\s*worker_processes\s+[^;]+;)", r"\g<1>\nworker_rlimit_nofile " + nofile + ";",
+                  text, count=1)
+    if "worker_rlimit_nofile" not in text:
+        text = "worker_rlimit_nofile " + nofile + ";\n" + text
+open(path, "w", encoding="utf-8").write(text)
+PY
+    if ! nginx -t >/dev/null 2>&1; then
+        mv -f -- "$backup" "$NGINX_CONF"
+        die "nginx rejected the connection limits; nginx.conf restored"
+    fi
+    rm -f -- "$backup"
+    install -d -m 0755 "$DROPIN_DIR"
+    cat > "$DROPIN.tmp" <<EOF
+# EasyPi Chameleon: bounded memory for the tunnel frontend. Each streamed
+# request may hold up to one 1m body buffer; past MemoryHigh nginx is slowed
+# down, past MemoryMax the worker is killed and its master starts a new one.
+[Service]
+MemoryHigh=25%
+MemoryMax=35%
+MemorySwapMax=0
+LimitNOFILE=65536
+EOF
+    mv -f -- "$DROPIN.tmp" "$DROPIN"
+    systemctl daemon-reload
+}
+
+install_hook() {
+    cat > "$HOOK.tmp" <<EOF
+// EasyPi Chameleon: after any package change, run the packaged nginx at once
+// if it changed and rebuild the WINDOW_UPDATE patch for it in the background.
+DPkg::Post-Invoke { "if [ -x $SELF ]; then $SELF refresh || true; fi"; };
+EOF
+    mv -f -- "$HOOK.tmp" "$HOOK"
+    cat > "$REBUILD_UNIT_FILE.tmp" <<EOF
+[Unit]
+Description=Rebuild the EasyPi Chameleon nginx patch for the installed nginx package
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=$SELF rebuild
+Nice=10
+TimeoutStartSec=2h
+EOF
+    mv -f -- "$REBUILD_UNIT_FILE.tmp" "$REBUILD_UNIT_FILE"
+    # Retries a rebuild that failed (for example without network) once a day;
+    # it does nothing while the patched binary matches the package.
+    cat > "$REBUILD_TIMER_FILE.tmp" <<EOF
+[Unit]
+Description=Retry the EasyPi Chameleon nginx patch daily
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    mv -f -- "$REBUILD_TIMER_FILE.tmp" "$REBUILD_TIMER_FILE"
+    systemctl daemon-reload
+    systemctl enable --now "$REBUILD_TIMER" >/dev/null 2>&1
+}
+
+# deb-src entries for the archives apt already trusts, kept private to this
+# tool so the system's own apt runs never download source indexes.
+prepare_sources() {
+    rm -rf -- "$APT_DIR"
+    install -d -m 0755 "$APT_DIR/parts" "$APT_DIR/lists/partial"
+    python3 - "$APT_DIR/parts" <<'PY'
+import glob, os, re, sys
+out = sys.argv[1]
+stanzas, lines = [], []
+for path in sorted(glob.glob("/etc/apt/sources.list.d/*.sources")):
+    for block in re.split(r"\n\s*\n", open(path, encoding="utf-8").read()):
+        fields = [l for l in block.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+        if not any(re.match(r"(?i)types:.*\bdeb\b", l) for l in fields):
+            continue
+        if any(re.match(r"(?i)enabled:\s*no", l) for l in fields):
+            continue
+        stanzas.append("\n".join("Types: deb-src" if re.match(r"(?i)types:", l) else l for l in fields))
+for path in ["/etc/apt/sources.list"] + sorted(glob.glob("/etc/apt/sources.list.d/*.list")):
+    if os.path.exists(path):
+        for l in open(path, encoding="utf-8"):
+            if re.match(r"\s*deb\s", l):
+                lines.append(re.sub(r"^\s*deb\s", "deb-src ", l.rstrip("\n")))
+if stanzas:
+    open(os.path.join(out, "source.sources"), "w").write("\n\n".join(stanzas) + "\n")
+if lines:
+    open(os.path.join(out, "source.list"), "w").write("\n".join(lines) + "\n")
+if not stanzas and not lines:
+    sys.exit("no apt sources found")
+PY
+}
+
+apt_source() { # apt with only the private source entries
+    apt-get "${APT_LOCK_WAIT[@]}" -o Dir::Etc::SourceList=/dev/null \
+        -o Dir::Etc::SourceParts="$APT_DIR/parts" -o Dir::State::Lists="$APT_DIR/lists" "$@"
+}
+
+install_build_deps() {
+    local missing=() pkg
+    for pkg in "${BUILD_DEPS[@]}"; do
+        dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed" || missing+=("$pkg")
+    done
+    [[ ${#missing[@]} -eq 0 ]] && return 0
+    DEBIAN_FRONTEND=noninteractive apt-get "${APT_LOCK_WAIT[@]}" install -y -qq \
+        --no-install-recommends "${missing[@]}" >/dev/null
+    # Not wanted by anything else: autoremove may clean them up again; the
+    # next rebuild reinstalls what it needs.
+    apt-mark auto "${missing[@]}" >/dev/null
+}
+
+configure_args() { # the packaged binary's own arguments, without the dynamic modules
+    "$DISTRIB" -V 2>&1 | sed -n 's/^configure arguments: //p' | python3 -c '
+import shlex, sys
+for arg in shlex.split(sys.stdin.read()):
+    if arg.endswith("=dynamic") or arg.startswith("--add-dynamic-module"):
+        continue
+    print(arg)'
+}
+
+build() { # prints the path of the built binary
+    local version="$1" src args=()
+    rm -rf -- "$BUILD_DIR"
+    install -d -m 0700 "$BUILD_DIR"
+    install_build_deps
+    prepare_sources
+    apt_source update -qq >/dev/null
+    if ! (cd "$BUILD_DIR" && apt_source source -qq "nginx=$version" >/dev/null 2>&1); then
+        # The archive keeps only the current source. When it is newer, an
+        # nginx update is pending; the apt hook builds the patch once it lands.
+        local available
+        available="$(apt_source showsrc nginx 2>/dev/null | sed -n 's/^Version: //p' | sort -V | tail -1)"
+        log "source of nginx $version is not available (archive has ${available:-none}); the patch is built after the nginx update is installed"
+        return 1
+    fi
+    src="$(find "$BUILD_DIR" -mindepth 1 -maxdepth 1 -type d -name 'nginx-*' | head -1)"
+    [[ -n "$src" ]] || { log "nginx source tree missing"; return 1; }
+    (cd "$src" && patch -p1 --dry-run -s < "$PATCH" >/dev/null && patch -p1 -s < "$PATCH") ||
+        { log "the patch does not apply to nginx $version"; return 1; }
+    mapfile -t args < <(configure_args)
+    [[ ${#args[@]} -gt 5 ]] || { log "cannot read the packaged configure arguments"; return 1; }
+    (cd "$src" && ./configure "${args[@]}" >"$BUILD_DIR/configure.log" 2>&1 &&
+        make -j"$(nproc)" >"$BUILD_DIR/make.log" 2>&1) ||
+        { log "nginx $version did not build (see $BUILD_DIR)"; return 1; }
+    strip --strip-unneeded "$src/objs/nginx"
+    [[ "$("$src/objs/nginx" -v 2>&1)" == "$("$DISTRIB" -v 2>&1)" ]] ||
+        { log "built version differs from the package"; return 1; }
+    "$src/objs/nginx" -t >/dev/null 2>&1 || { log "patched nginx rejects the configuration"; return 1; }
+    echo "$src/objs/nginx"
+}
+
+do_rebuild() {
+    local version built distrib_sha attempt
+    diverted || die "not installed"
+    for attempt in 1 2 3; do
+        version="$(package_version)"
+        [[ -n "$version" && -x "$DISTRIB" ]] || die "nginx package is not installed"
+        distrib_sha="$(sha "$DISTRIB")"
+        if [[ "$(state_get PATCHED)" == 1 && "$(state_get VERSION)" == "$version" &&
+              "$(state_get DISTRIB_SHA)" == "$distrib_sha" && "$(state_get PATCH_SHA)" == "$(sha "$PATCH")" ]]; then
+            log "patched nginx $version is current"
+            return 0
+        fi
+        if ! built="$(build "$version")"; then
+            use_packaged "patch build failed for $version"
+            rm -rf -- "$BUILD_DIR" "$APT_DIR"
+            return 0
+        fi
+        # A package update during the build makes this binary outdated.
+        [[ "$(sha "$DISTRIB")" == "$distrib_sha" ]] && break
+        log "nginx package changed during the build; building again"
+        use_packaged "package changed during the build"
+        [[ $attempt -lt 3 ]] || return 0
+    done
+    place_binary "$built"
+    if ! restart_nginx; then
+        use_packaged "patched nginx $version did not start"
+        rm -rf -- "$BUILD_DIR" "$APT_DIR"
+        return 0
+    fi
+    state_write "VERSION=$version" "PATCHED=1" "DISTRIB_SHA=$(sha "$DISTRIB")" \
+        "PATCH_SHA=$(sha "$PATCH")" "REASON="
+    rm -rf -- "$BUILD_DIR" "$APT_DIR"
+    log "patched nginx $version installed"
+}
+
+do_refresh() {
+    diverted || return 0
+    if [[ ! -x "$DISTRIB" ]]; then
+        # The nginx package was removed: drop the diversion with it.
+        rm -f -- "$NGINX"
+        dpkg-divert --package easypi-chameleon --rename --remove "$NGINX" >/dev/null 2>&1 || true
+        state_write "VERSION=" "PATCHED=0" "DISTRIB_SHA=" "PATCH_SHA=" "REASON=nginx removed"
+        return 0
+    fi
+    [[ "$(state_get DISTRIB_SHA)" == "$(sha "$DISTRIB")" ]] && return 0
+    # Security first: the new packaged binary runs before any rebuild.
+    use_packaged "package updated; rebuilding the patch"
+    systemctl start --no-block "$REBUILD_UNIT" || log "could not start the rebuild"
+}
+
+do_status() {
+    local current="unknown"
+    if diverted; then
+        [[ "$(sha "$NGINX")" == "$(sha "$DISTRIB")" ]] && current="packaged" || current="patched"
+    else
+        current="not-installed"
+    fi
+    echo "running=$current"
+    echo "package=$(package_version)"
+    [[ -f "$STATE" ]] && cat "$STATE"
+    return 0
+}
+
+do_install() {
+    [[ -f "$PATCH" ]] || die "patch missing at $PATCH"
+    ensure_divert
+    tune_limits
+    install_hook
+    do_rebuild
+    do_status
+}
+
+do_remove() {
+    systemctl disable --now "$REBUILD_TIMER" >/dev/null 2>&1 || true
+    rm -f -- "$HOOK" "$DROPIN" "$REBUILD_UNIT_FILE" "$REBUILD_TIMER_FILE"
+    rmdir "$DROPIN_DIR" 2>/dev/null || true
+    if diverted; then
+        rm -f -- "$NGINX"
+        dpkg-divert --package easypi-chameleon --rename --remove "$NGINX" >/dev/null
+    fi
+    systemctl daemon-reload
+    restart_nginx || true
+    rm -rf -- "$STATE_DIR"
+}
+
+[[ $EUID -eq 0 ]] || die "must run as root"
+command="${1:-status}"
+exec 9>"$LOCK"
+if [[ "$command" == refresh ]]; then
+    flock -n 9 || exit 0 # an install or rebuild is already handling it
+else
+    flock 9
+fi
+case "$command" in
+    install) do_install ;;
+    refresh) do_refresh ;;
+    rebuild) do_rebuild ;;
+    status) do_status ;;
+    remove) do_remove ;;
+    *) die "usage: $NAME install|refresh|rebuild|status|remove" ;;
+esac

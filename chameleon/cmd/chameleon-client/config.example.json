@@ -1,0 +1,16 @@
+{
+  "server_address": "YOUR_SERVER_IP:443",
+  "psk_key": "REPLACE_WITH_HOME_CLIENT_AUTH_KEY",
+  "transport_key": "REPLACE_WITH_SERVER_ROUTING_PSK",
+  "reality_server_public_key": "REPLACE_WITH_64_HEX_CHARS_FROM_SERVER_LOG",
+  "reality_shield_preset": "ip",
+  "verify_server_certificate": true,
+  "reconnect_interval": 5,
+
+  "tun_name": "cham0",
+  "tun_addr": "10.10.0.2/32",
+  "mtu": 1420,
+  "configure_tun": true,
+  "status_file": "/run/chameleon-client.status.json",
+  "profile_path": "/var/lib/chameleon/profile.json"
+}

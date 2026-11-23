@@ -1,0 +1,4 @@
+# Human-maintained code-quality constraints. CI uses requirements-dev.lock.
+ruff==0.15.7
+pip-audit==2.10.1
+pytest==9.0.3

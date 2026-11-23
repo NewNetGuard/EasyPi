@@ -1,0 +1,25 @@
+[Unit]
+Description=EasyPi Mobile Home Packet Tunnel
+After=network-online.target easypi-netprotection.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/etc/easypi-mobile-home
+ExecStart=/opt/EasyPi/bin/chameleon-server-home
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+ReadOnlyPaths=/opt/EasyPi
+ReadWritePaths=/run /var/run /proc/sys/net/ipv4 /proc/sys/net/core
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_DAC_READ_SEARCH
+RestrictAddressFamilies=AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

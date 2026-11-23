@@ -1,0 +1,37 @@
+[Unit]
+Description=Import Tailscale Taildrop files into EasyPi PiCloud
+After=local-fs.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0027
+# The application settings file is restorable from a backup, so it is never
+# loaded as this root service's environment. The importer reads its one
+# setting, the upload size limit, from the file itself.
+ExecStart=/usr/bin/python3 /opt/EasyPi/scripts/services/picloud_taildrop_import.py --state /var/lib/easypi/taildrop --tailscale-files /var/lib/tailscale/files --destination /opt/EasyPi/backend/data/picloud --owner easypi --group easypi --settings-file /opt/EasyPi/.env
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER
+ReadWritePaths=/var/lib/easypi/taildrop -/var/lib/tailscale/files /opt/EasyPi/backend/data/picloud/Photos /opt/EasyPi/backend/data/picloud/Videos /opt/EasyPi/backend/data/picloud/Documents /opt/EasyPi/backend/data/picloud/Music /opt/EasyPi/backend/data/picloud/Encrypted /opt/EasyPi/backend/data/picloud/Files
+
+[Install]
+WantedBy=multi-user.target

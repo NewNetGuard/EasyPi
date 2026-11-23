@@ -1,0 +1,97 @@
+# EasyPi NetProtection Configuration
+# © 2025 EasyPi Project
+
+[netprotection]
+enabled = true
+debug = false
+block_mode = "nxdomain"
+
+[netprotection.listener]
+address = "0.0.0.0"
+port = 53
+enable_udp = true
+enable_tcp = true
+tcp_timeout_sec = 30
+udp_workers = 64
+udp_queue_size = 2048
+max_concurrent_queries = 256
+max_client_queries = 64
+max_connections = 256
+
+[netprotection.encrypted_dns]
+doh_enabled = false
+doh_address = "0.0.0.0"
+doh_port = 8053
+doh_path = "/dns-query"
+dot_enabled = false
+dot_address = "0.0.0.0"
+dot_port = 853
+tls_cert_path = "/opt/EasyPi/certs/cert.pem"
+tls_key_path = "/opt/EasyPi/certs/key.pem"
+
+[netprotection.upstream]
+# Use local Unbound recursive resolver (no third-party DNS!)
+# Unbound queries root servers directly for maximum privacy
+servers = [
+    "127.0.0.1:5354",
+]
+timeout_ms = 5000
+retry_count = 2
+health_check_interval_sec = 60
+
+[netprotection.cache]
+max_entries = 10000
+default_ttl_sec = 300
+negative_ttl_sec = 60
+min_ttl_sec = 10
+max_ttl_sec = 86400
+
+[netprotection.chronicle]
+enabled = true
+retention_days = 7
+anonymize_ip = false
+anonymize_ipv6_prefix = 64
+max_entries = 100000
+
+[netprotection.guardian]
+enabled = true
+health_check_interval_sec = 30
+safe_mode_on_failure = true
+max_consecutive_failures = 3
+recovery_check_interval_sec = 10
+
+[netprotection.verdict]
+default_action = "allow"
+enable_cname_uncloak = true
+enable_entropy_check = true
+entropy_threshold = 3.5
+max_cname_depth = 8
+min_confidence_to_block = 70
+evidence_aggregation = "weighted"
+
+[netprotection.heuristics]
+# All heuristics enabled by default
+enabled = true
+enable_dga_detector = true
+enable_homoglyph_detector = true
+enable_first_seen = true
+enable_signal_aggregator = true
+enable_domain_analysis = true
+enable_device_anomaly = true
+enable_asn_cluster = true
+enable_shadow_mode = true
+
+# Tuning
+dga_score_threshold = 0.6
+homoglyph_score_threshold = 0.5
+first_seen_new_days = 7
+shadow_auto_expire_days = 30
+shadow_auto_promote_hits = 100
+quick_mode_threshold_ms = 5
+persist_signals = true
+
+[netprotection.vault]
+db_path = "data/netprotection/vault.db"
+encryption_enabled = true
+backup_on_start = true
+max_backups = 5

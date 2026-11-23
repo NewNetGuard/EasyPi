@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="description" content="EasyPi - Modern Raspberry Pi Management System. Control services, VPN, backups, security, and terminal from your browser." />
+    <meta name="theme-color" content="#0c1445" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EasyPi" />
+    <meta name="application-name" content="EasyPi" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#0c1445" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Fonts are self-hosted via @fontsource (bundled by Vite, imported in
+         src/main.tsx) — no external Google Fonts request, so the strict CSP
+         needs no external style-src/font-src host and the panel works offline. -->
+
+    <title>EasyPi - Raspberry Pi Management</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

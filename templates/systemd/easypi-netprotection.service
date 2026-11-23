@@ -1,0 +1,101 @@
+[Unit]
+Description=EasyPi NetProtection DNS Server
+Documentation=https://github.com/easypi/netprotection
+After=network-online.target easypi-ipv6-policy-guard.service easypi-stealth-guard.service easypi-stealth-resume.service easypi-stealth-dns.service
+Wants=network-online.target
+Requires=easypi-ipv6-policy-guard.service easypi-stealth-guard.service easypi-stealth-resume.service easypi-stealth-dns.service
+BindsTo=easypi-ipv6-policy-guard.service
+Before=easypi-backend.service
+# Restart limits must be in [Unit] section
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=easypi
+Group=easypi
+UMask=0077
+
+# Working directory
+WorkingDirectory=/opt/EasyPi
+
+# Environment
+Environment="PATH=/opt/EasyPi/backend/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/opt/EasyPi"
+Environment="NETPROTECTION_CONFIG=/opt/EasyPi/config/netprotection.toml"
+
+# Salt for IP anonymization (KEEP SECRET - file must be chmod 600)
+EnvironmentFile=-/opt/EasyPi/config/netprotection.env
+
+# Create the cache as the unprivileged service account. Never perform chown or
+# chmod as root below /opt/EasyPi/cache: easypi can write there and could replace
+# a child with a symlink. A hostile or root-owned path therefore fails startup
+# instead of redirecting a privileged filesystem operation.
+ExecStartPre=/usr/bin/install -d -m 0750 /opt/EasyPi/cache/netprotection
+
+# Start command
+ExecStart=/opt/EasyPi/backend/.venv/bin/python -m easypi_netprotection --config /opt/EasyPi/config/netprotection.toml
+
+# Graceful shutdown
+ExecStop=/bin/kill -SIGTERM $MAINPID
+TimeoutStopSec=30
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECURITY HARDENING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Capability for binding to privileged ports (53)
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Drop all other capabilities
+NoNewPrivileges=yes
+
+# Filesystem protection
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+# Read-write paths (explicit whitelist). The cache parent is writable so the
+# unprivileged ExecStartPre can create its own child under ProtectSystem=strict.
+ReadWritePaths=/opt/EasyPi/data/netprotection
+ReadWritePaths=/opt/EasyPi/cache
+ReadWritePaths=/opt/EasyPi/logs
+
+# Network restrictions
+# DNS proxy needs to contact external upstream DNS servers (1.1.1.1, 8.8.8.8, etc.)
+# So we only restrict address families, not IP addresses
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# System call filtering
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@mount @reboot @swap @privileged
+
+# Memory protection
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+
+# Resource limits
+LimitNOFILE=65535
+MemoryMax=512M
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOGGING
+# ═══════════════════════════════════════════════════════════════════════════════
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=easypi-netprotection
+
+[Install]
+WantedBy=multi-user.target

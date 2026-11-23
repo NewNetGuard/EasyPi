@@ -1,0 +1,140 @@
+# Node / Frontend
+node_modules/
+.pnpm-store/
+.npm/
+.vite/
+dist/
+build/
+coverage/
+frontend/frontend-dist.tar.gz
+frontend/dist.tar.gz
+
+# Python
+.venv/
+.venv311/
+venv/
+backend/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Environment files
+.env
+.env.*
+*.env
+!.env.example
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+data/db/
+data/backups/
+data/uploads/
+data/operations/
+data/recordings/
+data/rollback/
+data/user/
+data/security/
+data/network/
+data/ssh-trust/
+data/notification_prefs.json
+backend/data/*
+!backend/data/services.json
+data/netprotection/*
+!data/netprotection/whatsapp_extra_ips.txt
+# Runtime-downloaded third-party feeds and their generated provenance sidecars.
+# These must never be committed or bundled into an EasyPi release.
+adult_domains.txt
+adult_domains.NOTICE.txt
+adult_domains.LICENSE.txt
+adult_domains.sources.json
+# Stray SQLite DBs in the data root (test/temp artifacts — must never be tracked
+# or synced to a server; the real DB lives under data/db/).
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Offline ML training corpora (large generated data blobs, not code — the live
+# on-device model trains itself from flow_log.db, no need to track these).
+data/ml_train/
+
+# Stray probe DB at the repo root (test/temp artifact — must never be tracked).
+/_probe.db
+
+# Build artifacts
+.build/
+backend/build/
+backend/dist/
+easypi-*.tar.gz
+easypi-*.zip
+/*.tgz
+/*.tar
+/*-deploy-*.tar.gz
+/.prism-replay-*/
+/.server-*.toml
+.tmp-*.tar.gz
+test.db
+security-test.db
+/test_*.db
+/test-*.db
+/backups/
+/bin/
+/cache/
+/certs/
+/easypi_netprotection/proxy/
+
+# IDE / OS
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local temp files
+temp_config.json
+data/.setup_token
+tools/vs_BuildTools.exe
+
+# Release signing PRIVATE key — must NEVER be committed. The real key lives
+# outside the repo (~/.easypi-signing/); these are a safety net in case a copy
+# ever lands in the project. The PUBLIC key (*.pub) is intentionally NOT ignored
+# — it ships with EasyPi so devices can verify updates.
+*.key
+update_signing.key
+.easypi-signing/
+
+# Public source copy: never publish local credentials or traffic/recovery data
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.secret
+*.credentials
+*.epikey
+*.epibak
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.pcap
+*.pcapng
+*.har
+*.dump
+.ssh/

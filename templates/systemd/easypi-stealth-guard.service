@@ -1,0 +1,16 @@
+[Unit]
+Description=Install EasyPi Chameleon fail-closed guards before networking
+DefaultDependencies=no
+After=local-fs.target
+Before=network-pre.target network.target network-online.target
+Before=easypi-stealth-dns.service easypi-stealth-resume.service
+Before=easypi-netprotection.service easypi-backend.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/EasyPi/scripts/runner settings/stealth_vpn.sh guard
+RemainAfterExit=yes
+UMask=0077
+
+[Install]
+WantedBy=network-pre.target

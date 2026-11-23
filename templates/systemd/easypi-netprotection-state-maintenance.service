@@ -1,0 +1,31 @@
+[Unit]
+Description=EasyPi NetProtection State Maintenance
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/opt/EasyPi/scripts/maintenance/netprotection_state_maintenance.sh
+
+[Service]
+Type=oneshot
+User=easypi
+Group=easypi
+ExecStart=/bin/bash /opt/EasyPi/scripts/maintenance/netprotection_state_maintenance.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+UMask=0077
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ReadWritePaths=/opt/EasyPi/data/netprotection
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

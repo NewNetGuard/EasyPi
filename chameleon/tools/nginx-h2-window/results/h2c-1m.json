@@ -1,0 +1,404 @@
+{
+ "stock 1m": {
+  "bulk_capped": [
+   {
+    "seconds": 1.377,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 1.344,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 37.69,
+      "p99": 58.59,
+      "max": 68.8
+     }
+    },
+    "stream_wu": 1496,
+    "conn_wu": 1,
+    "wu_avg_kb": 17.7,
+    "client_blocked_s": 1.246,
+    "client_max_block_ms": 32.6,
+    "client_blocks": 853,
+    "mb_s": 19.04,
+    "ok": true
+   },
+   {
+    "seconds": 1.374,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 1.341,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 37.64,
+      "p99": 56.58,
+      "max": 68.23
+     }
+    },
+    "stream_wu": 1367,
+    "conn_wu": 1,
+    "wu_avg_kb": 19.4,
+    "client_blocked_s": 1.245,
+    "client_max_block_ms": 32.6,
+    "client_blocks": 881,
+    "mb_s": 19.08,
+    "ok": true
+   },
+   {
+    "seconds": 1.376,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 1.343,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 37.68,
+      "p99": 58.0,
+      "max": 69.01
+     }
+    },
+    "stream_wu": 1388,
+    "conn_wu": 1,
+    "wu_avg_kb": 19.1,
+    "client_blocked_s": 1.246,
+    "client_max_block_ms": 33.3,
+    "client_blocks": 886,
+    "mb_s": 19.05,
+    "ok": true
+   }
+  ],
+  "bulk_free": [
+   {
+    "seconds": 0.928,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 0.894,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 19.28,
+      "p99": 22.05,
+      "max": 22.12
+     }
+    },
+    "stream_wu": 373,
+    "conn_wu": 1,
+    "wu_avg_kb": 71.1,
+    "client_blocked_s": 0.837,
+    "client_max_block_ms": 35.2,
+    "client_blocks": 29,
+    "mb_s": 28.25,
+    "ok": true
+   },
+   {
+    "seconds": 0.926,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 0.893,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 19.65,
+      "p99": 20.64,
+      "max": 20.71
+     }
+    },
+    "stream_wu": 296,
+    "conn_wu": 1,
+    "wu_avg_kb": 89.7,
+    "client_blocked_s": 0.837,
+    "client_max_block_ms": 34.9,
+    "client_blocks": 25,
+    "mb_s": 28.31,
+    "ok": true
+   }
+  ],
+  "slow_3mb": {
+   "seconds": 8.773,
+   "sink": {
+    "bytes": 26214400,
+    "leftover": 0,
+    "seconds": 8.739,
+    "small_ms": null,
+    "big_ms": {
+     "n": 1600,
+     "p50": 1104.35,
+     "p99": 1441.19,
+     "max": 1469.14
+    }
+   },
+   "stream_wu": 344,
+   "conn_wu": 1,
+   "wu_avg_kb": 74.7,
+   "client_blocked_s": 7.347,
+   "client_max_block_ms": 676.7,
+   "client_blocks": 29,
+   "mb_s": 2.99,
+   "ok": true
+  },
+  "interactive": {
+   "bulk_mb_s": 19.08,
+   "bulk_wu": 1320,
+   "probe_ms": {
+    "n": 65,
+    "p50": 36.79,
+    "p99": 60.91,
+    "max": 60.91
+   },
+   "ok": true
+  },
+  "trickle": {
+   "small_ms": {
+    "n": 400,
+    "p50": 16.31,
+    "p99": 17.04,
+    "max": 17.43
+   },
+   "stream_wu": 400,
+   "ok": true
+  },
+  "pauses": {
+   "small_ms": {
+    "n": 2,
+    "p50": 17.02,
+    "p99": 17.02,
+    "max": 17.02
+   },
+   "stream_wu": 178,
+   "client_blocked_s": 0.168,
+   "ok": true
+  },
+  "exhaust": {
+   "wait_ms": [
+    33.1,
+    0.1,
+    31.6,
+    0.1,
+    2.0,
+    0.1,
+    1.6,
+    1.8,
+    1.6,
+    1.5,
+    1.3,
+    1.5,
+    2.1,
+    0.0,
+    1.4
+   ],
+   "ok": true
+  },
+  "last_portion": {
+   "last_byte": true,
+   "bare_end": true
+  },
+  "log_problems": []
+ },
+ "patched 1m": {
+  "bulk_capped": [
+   {
+    "seconds": 1.374,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 1.341,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 31.33,
+      "p99": 53.61,
+      "max": 65.1
+     }
+    },
+    "stream_wu": 98,
+    "conn_wu": 1,
+    "wu_avg_kb": 268.7,
+    "client_blocked_s": 1.301,
+    "client_max_block_ms": 32.9,
+    "client_blocks": 96,
+    "mb_s": 19.08,
+    "ok": true
+   },
+   {
+    "seconds": 1.375,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 1.342,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 31.26,
+      "p99": 54.33,
+      "max": 65.41
+     }
+    },
+    "stream_wu": 99,
+    "conn_wu": 1,
+    "wu_avg_kb": 268.1,
+    "client_blocked_s": 1.302,
+    "client_max_block_ms": 34.0,
+    "client_blocks": 96,
+    "mb_s": 19.07,
+    "ok": true
+   },
+   {
+    "seconds": 1.374,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 1.342,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 31.41,
+      "p99": 53.05,
+      "max": 66.03
+     }
+    },
+    "stream_wu": 99,
+    "conn_wu": 1,
+    "wu_avg_kb": 266.8,
+    "client_blocked_s": 1.295,
+    "client_max_block_ms": 33.8,
+    "client_blocks": 96,
+    "mb_s": 19.08,
+    "ok": true
+   }
+  ],
+  "bulk_free": [
+   {
+    "seconds": 0.993,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 0.96,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 18.2,
+      "p99": 51.2,
+      "max": 53.48
+     }
+    },
+    "stream_wu": 109,
+    "conn_wu": 1,
+    "wu_avg_kb": 241.6,
+    "client_blocked_s": 0.918,
+    "client_max_block_ms": 34.0,
+    "client_blocks": 29,
+    "mb_s": 26.4,
+    "ok": true
+   },
+   {
+    "seconds": 1.02,
+    "sink": {
+     "bytes": 26214400,
+     "leftover": 0,
+     "seconds": 0.986,
+     "small_ms": null,
+     "big_ms": {
+      "n": 1600,
+      "p50": 17.71,
+      "p99": 50.61,
+      "max": 53.73
+     }
+    },
+    "stream_wu": 107,
+    "conn_wu": 1,
+    "wu_avg_kb": 247.2,
+    "client_blocked_s": 0.955,
+    "client_max_block_ms": 34.7,
+    "client_blocks": 29,
+    "mb_s": 25.7,
+    "ok": true
+   }
+  ],
+  "slow_3mb": {
+   "seconds": 8.772,
+   "sink": {
+    "bytes": 26214400,
+    "leftover": 0,
+    "seconds": 8.737,
+    "small_ms": null,
+    "big_ms": {
+     "n": 1600,
+     "p50": 1463.7,
+     "p99": 1786.84,
+     "max": 1832.67
+    }
+   },
+   "stream_wu": 68,
+   "conn_wu": 1,
+   "wu_avg_kb": 379.9,
+   "client_blocked_s": 7.07,
+   "client_max_block_ms": 496.7,
+   "client_blocks": 35,
+   "mb_s": 2.99,
+   "ok": true
+  },
+  "interactive": {
+   "bulk_mb_s": 19.08,
+   "bulk_wu": 99,
+   "probe_ms": {
+    "n": 64,
+    "p50": 29.83,
+    "p99": 58.09,
+    "max": 58.09
+   },
+   "ok": true
+  },
+  "trickle": {
+   "small_ms": {
+    "n": 400,
+    "p50": 16.65,
+    "p99": 17.36,
+    "max": 17.52
+   },
+   "stream_wu": 1,
+   "ok": true
+  },
+  "pauses": {
+   "small_ms": {
+    "n": 2,
+    "p50": 16.81,
+    "p99": 16.81,
+    "max": 16.81
+   },
+   "stream_wu": 14,
+   "client_blocked_s": 0.174,
+   "ok": true
+  },
+  "exhaust": {
+   "wait_ms": [
+    32.6,
+    32.5,
+    4.2,
+    11.1,
+    12.4,
+    13.2,
+    13.7,
+    13.6,
+    14.1,
+    12.6,
+    12.9,
+    12.9,
+    14.0,
+    12.5,
+    12.8
+   ],
+   "ok": true
+  },
+  "last_portion": {
+   "last_byte": true,
+   "bare_end": true
+  },
+  "log_problems": []
+ }
+}

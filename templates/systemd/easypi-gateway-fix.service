@@ -1,0 +1,11 @@
+[Unit]
+Description=EasyPi Gateway Loop Fix
+After=network-online.target NetworkManager.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/EasyPi/scripts/setup/gateway_fix.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,36 @@
+[Unit]
+Description=EasyPi opt-in Chrome TLS observer
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/easypi/chrome-bridge.json
+
+[Service]
+User=easypi-prism-tls
+Group=easypi
+RuntimeDirectory=easypi-chrome-bridge
+RuntimeDirectoryMode=0750
+ExecStart=/opt/EasyPi/backend/bin/easypi-backend --prism-tls-chrome --config /etc/easypi/chrome-bridge.json
+Restart=always
+RestartSec=5
+CPUQuota=25%
+MemoryMax=256M
+MemorySwapMax=0
+TasksMax=16
+LimitCORE=0
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_NET_RAW
+AmbientCapabilities=CAP_NET_RAW
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_PACKET AF_INET AF_INET6 AF_NETLINK
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

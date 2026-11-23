@@ -1,0 +1,95 @@
+"""Stable facade for NetProtection compatibility routes."""
+
+# ruff: noqa: F401
+
+from app.api.endpoints.netprotection_api.compatibility_components.context import (
+    APIRouter,
+    Any,
+    BYPASS_ALERT_TTL_SEC,
+    Body,
+    Depends,
+    DeviceRuleRequest,
+    Dict,
+    FirewallToggleRequest,
+    HTTPException,
+    List,
+    MonitoringSettingsRequest,
+    Optional,
+    PORNOGRAPHY_PARENTAL_SHORTCUT,
+    ThreatBanRequest,
+    ThreatUnbanRequest,
+    User,
+    _record_netprotection_event,
+    datetime,
+    firewall_service,
+    json,
+    logger,
+    netprotection_service,
+    require_admin,
+    router,
+    sanitize_domain,
+    sanitize_mac,
+    threat_service,
+    time,
+    timezone,
+    validate_ip,
+)
+
+from app.api.endpoints.netprotection_api.compatibility_components.firewall_parental import (
+    _format_firewall_rules,
+    _is_private_ip,
+    add_firewall_rule_compat,
+    add_parental_client_compat,
+    delete_firewall_rule_compat,
+    delete_parental_client_compat,
+    get_blocked_services_list_compat,
+    get_firewall_rules_compat,
+    get_parental_clients_compat,
+    get_parental_status_compat,
+    get_whatsapp_block_mode_compat,
+    restore_parental_client_internet_compat,
+    set_whatsapp_block_mode_compat,
+    toggle_firewall_compat,
+    toggle_parental_compat,
+    toggle_safesearch_compat,
+    update_parental_client_compat,
+)
+
+from app.api.endpoints.netprotection_api.compatibility_components.bypass import (
+    acknowledge_bypass_alert_compat,
+    clear_bypass_history_compat,
+    get_bypass_alerts_compat,
+    get_bypass_blocked_compat,
+    get_bypass_history_compat,
+    get_fail_closed_status_compat,
+    restore_fail_closed_ip_compat,
+    set_bypass_mode_compat,
+)
+
+from app.api.endpoints.netprotection_api.compatibility_components.rules_threats import (
+    _managed_client_for_device,
+    add_device_rule_compat,
+    ban_ip_compat,
+    clear_threats_compat,
+    get_banned_ips_compat,
+    get_device_rules_compat,
+    get_threats_compat,
+    remove_device_rule_compat,
+    unban_ip_compat,
+)
+
+from app.api.endpoints.netprotection_api.compatibility_components.monitor_dns import (
+    add_dns_rewrite_compat,
+    clear_dns_cache_compat,
+    delete_dns_rewrite_compat,
+    get_dns_rewrites_compat,
+    get_monitoring_status_compat,
+    get_upstream_servers,
+    reset_all_settings_compat,
+    reset_statistics_compat,
+    set_upstream_servers,
+    start_monitoring_compat,
+    stop_monitoring_compat,
+    test_upstream_dns_compat,
+    update_monitoring_settings_compat,
+)

@@ -1,0 +1,15 @@
+[Unit]
+Description=Restore EasyPi Chameleon strict routing policy
+After=network-online.target easypi-stealth-guard.service easypi-stealth-dns.service
+Wants=network-online.target easypi-stealth-dns.service
+Requires=easypi-stealth-guard.service
+Before=easypi-netprotection.service easypi-backend.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/EasyPi/scripts/runner settings/stealth_vpn.sh resume
+RemainAfterExit=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

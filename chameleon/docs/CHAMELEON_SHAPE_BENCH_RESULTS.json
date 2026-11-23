@@ -1,0 +1,129 @@
+{
+  "ja4": [
+    "t13d1517h2_8daaf6152771_937be626dbce"
+  ],
+  "upload_rhythm": {
+    "client_writes": 4539,
+    "echo_share": 0.923,
+    "echo_lag_ms_median": 0,
+    "small_down_records_per_write": 1.072,
+    "download_seconds": 104,
+    "writes_per_download_second": 43.2,
+    "write_gap_ms_p10_p50_p90": [
+      3,
+      15,
+      40
+    ]
+  },
+  "connections": 2,
+  "max_opened_within_1s": 1,
+  "connections_over_1mb": 1,
+  "upload_only_connections": 0,
+  "records_up": {
+    "records": 4572,
+    "top8_share": 0.199,
+    "small_share": 0.015,
+    "max": 14343,
+    "most_common": [
+      [
+        358,
+        138
+      ],
+      [
+        206,
+        118
+      ],
+      [
+        218,
+        116
+      ],
+      [
+        230,
+        112
+      ],
+      [
+        342,
+        109
+      ]
+    ]
+  },
+  "records_down": {
+    "records": 29964,
+    "top8_share": 0.636,
+    "small_share": 0.352,
+    "max": 16401,
+    "most_common": [
+      [
+        16401,
+        6141
+      ],
+      [
+        35,
+        5667
+      ],
+      [
+        30,
+        4389
+      ],
+      [
+        4116,
+        702
+      ],
+      [
+        3353,
+        545
+      ]
+    ]
+  },
+  "phases": {
+    "idle1": {
+      "seconds": 90,
+      "runs": 1,
+      "packets_per_min": 8,
+      "kb_up_per_min": 0,
+      "kb_down_per_min": 0
+    },
+    "browse": {
+      "seconds": 60,
+      "runs": 1,
+      "packets_per_min": 1395,
+      "kb_up_per_min": 198,
+      "kb_down_per_min": 2192
+    },
+    "stream": {
+      "seconds": 90,
+      "runs": 1,
+      "packets_per_min": 22835,
+      "kb_up_per_min": 1014,
+      "kb_down_per_min": 23782
+    },
+    "bulk": {
+      "seconds": 6,
+      "runs": 1,
+      "packets_per_min": 374838,
+      "kb_up_per_min": 50941,
+      "kb_down_per_min": 1090759
+    },
+    "idle2": {
+      "seconds": 60,
+      "runs": 1,
+      "packets_per_min": 59,
+      "kb_up_per_min": 68,
+      "kb_down_per_min": 1
+    }
+  },
+  "connection_lifetimes": [
+    {
+      "opened_at_min": 0.0,
+      "minutes": 0.0,
+      "mb": 0.0,
+      "seen_from_start": false
+    },
+    {
+      "opened_at_min": 0.0,
+      "minutes": 5.2,
+      "mb": 159.8,
+      "seen_from_start": true
+    }
+  ]
+}

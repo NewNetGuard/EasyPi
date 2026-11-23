@@ -1,0 +1,13 @@
+[Unit]
+Description=Private local input for opted-in Prism TLS shadow sessions
+
+[Socket]
+ListenStream=/run/easypi-prism-endpoint-bridge.sock
+SocketUser=easypi-prism-tls
+SocketGroup=easypi-prism-tls
+SocketMode=0600
+Accept=yes
+MaxConnections=1
+RemoveOnStop=yes
+Service=easypi-prism-endpoint-bridge@.service
+# Deliberately no [Install] target. Never enable at boot or open a TCP listener.

@@ -1,0 +1,6 @@
+# Prism DPI never commits captured traffic or derived caches
+*.pcap
+*.pcapng
+captures/
+cache/*.json
+__pycache__/

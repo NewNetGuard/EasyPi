@@ -1,0 +1,97 @@
+/**
+ * Guard Security API - Powered by NetProtection
+ * 
+ * This module provides API functions for Guard Security page,
+ * fetching data from the native NetProtection DNS engine.
+ */
+
+export {
+  addFirewallRule,
+  deleteFirewallRule,
+  getFirewallRules,
+  toggleFirewall,
+} from './guardSecurityFirewall'
+export {
+  addBlocklist,
+  addDevice,
+  addToBlacklist,
+  addToWhitelist,
+  clearQueryLog,
+  deleteBlocklist,
+  deleteDevice,
+  disableProtection,
+  enableProtection,
+  getBlacklist,
+  getBlocklists,
+  getDashboard,
+  getDevices,
+  getDNSConfig,
+  getProfileInfo,
+  getQueryLog,
+  getStats,
+  getTopBlocked,
+  getWhitelist,
+  refreshBlocklist,
+  removeFromBlacklist,
+  removeFromWhitelist,
+  toggleBlocklist,
+  updateBlocklists,
+  updateDNSConfig,
+} from './guardSecurityNetProtection'
+export type { ProfileInfo } from './guardSecurityNetProtection'
+export {
+  acknowledgeBypassAlertByIp,
+  addParentalClient,
+  createParentalProfile,
+  deleteParentalClient,
+  deleteParentalProfile,
+  clearBypassHistory,
+  getBlockedServicesList,
+  getBypassBlocked,
+  getBypassHistory,
+  getBypassStatus,
+  getFailClosedStatus,
+  getParentalClients,
+  getParentalProfiles,
+  getParentalStatus,
+  getWhatsAppBlockMode,
+  restoreFailClosedInternetByIp,
+  restoreParentalClientInternet,
+  setBypassModeByIp,
+  setWhatsAppBlockMode,
+  toggleParental,
+  toggleSafeSearch,
+  updateParentalClient,
+} from './guardSecurityParental'
+export type {
+  BypassBlockedDevice,
+  BypassBlockedStatus,
+  BypassDevice,
+  BypassHistoryDevice,
+  BypassHistoryStatus,
+  BypassStatus,
+  FailClosedDevice,
+  FailClosedStatus,
+  ParentalClient,
+  WhatsAppBlockMode,
+  WhatsAppBlockModeStatus,
+} from './guardSecurityParental'
+export {
+  addDNSRewrite,
+  banIP,
+  clearDNSCache,
+  clearThreats,
+  deleteDNSRewrite,
+  getBannedIPs,
+  getDNSRewrites,
+  getMonitoringStatus,
+  getThreats,
+  resetAllSettings,
+  resetStatistics,
+  startMonitoring,
+  stopMonitoring,
+  testUpstreamDNS,
+  unbanIP,
+  updateMonitoringSettings,
+} from './guardSecurityMonitor'
+export type { DNSRewrite, MonitoringStatus } from './guardSecurityMonitor'

@@ -1,0 +1,35 @@
+{
+  "sdist_url": "https://files.pythonhosted.org/packages/ab/c7/c1b013f8e5ae667305c5d9a76697f8cbd81874ce6ebc8271d1f5bdb5e51b/pylsqpack-1.0.0.tar.gz",
+  "sdist_sha256": "4674adc2c833c1c70a36454f5774e9def94fc3109e4a8464d804af2a2030957a",
+  "source_files_sha256": {
+    "binding.c": "43ad580008260482f071fdaabf800b9637ff6067222b58b7e41456cc32e13928",
+    "lsqpack.c": "fdd66266f7d1648b1c6c878c27cb28ca152ed11d0dc74b5047f2ac3c16d04fb5",
+    "lsqpack.h": "79fa7ff11fc2d7e29177e16c3e61fe4edf6d1a13aaacc85628f04775ea7d6689"
+  },
+  "measurements": [
+    {
+      "connections": 1,
+      "pylsqpack": "1.0.0",
+      "python": "3.13.5",
+      "pointer_bytes": 8,
+      "metadata_bytes_per_flow": 16464,
+      "malloc_sampled_peak_delta": 475824,
+      "rss_sampled_peak_delta": 884736,
+      "tracemalloc_current": 67504,
+      "tracemalloc_peak": 116685,
+      "rss_process_high_water": 20791296
+    },
+    {
+      "connections": 16,
+      "pylsqpack": "1.0.0",
+      "python": "3.13.5",
+      "pointer_bytes": 8,
+      "metadata_bytes_per_flow": 16464,
+      "malloc_sampled_peak_delta": 6037984,
+      "rss_sampled_peak_delta": 6619136,
+      "tracemalloc_current": 394393,
+      "tracemalloc_peak": 443630,
+      "rss_process_high_water": 24461312
+    }
+  ]
+}

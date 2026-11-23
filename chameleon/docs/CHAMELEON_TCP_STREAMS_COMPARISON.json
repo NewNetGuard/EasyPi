@@ -1,0 +1,478 @@
+{
+  "paths": {
+    "streams": {
+      "dl_cloudflare": {
+        "mb_per_s": {
+          "median": 19.524,
+          "min": 8.104,
+          "max": 19.76,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 22.355,
+          "min": 11.847,
+          "max": 24.66,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 27.269,
+          "min": 16.532,
+          "max": 29.286,
+          "n": 3
+        }
+      },
+      "dl_hetzner": {
+        "mb_per_s": {
+          "median": 14.459,
+          "min": 10.542,
+          "max": 19.432,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 17.382,
+          "min": 17.076,
+          "max": 40.04,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 24.002,
+          "min": 21.717,
+          "max": 32.646,
+          "n": 3
+        }
+      },
+      "upload": {
+        "mb_per_s": {
+          "median": 1.028,
+          "min": 0.971,
+          "max": 1.052,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 4.874,
+          "min": 4.139,
+          "max": 5.695,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 4.672,
+          "min": 4.566,
+          "max": 4.699,
+          "n": 3
+        }
+      },
+      "site": {
+        "connect_ms": {
+          "median": 2.138,
+          "min": 1.71,
+          "max": 39.287,
+          "n": 18
+        },
+        "tls_ms": {
+          "median": 102.144,
+          "min": 71.376,
+          "max": 1169.533,
+          "n": 18
+        },
+        "first_byte_ms": {
+          "median": 182.255,
+          "min": 110.246,
+          "max": 1311.95,
+          "n": 18
+        },
+        "total_ms": {
+          "median": 302.298,
+          "min": 179.677,
+          "max": 1393.951,
+          "n": 18
+        }
+      },
+      "parallel4": {
+        "mb_per_s": {
+          "median": 19.942,
+          "min": 19.443,
+          "max": 20.442,
+          "n": 2
+        },
+        "pi_cpu_pct": {
+          "median": 23.762,
+          "min": 23.609,
+          "max": 23.914,
+          "n": 2
+        },
+        "client_cpu_pct_of_core": {
+          "median": 29.373,
+          "min": 28.414,
+          "max": 30.331,
+          "n": 2
+        }
+      }
+    },
+    "cham0": {
+      "dl_cloudflare": {
+        "mb_per_s": {
+          "median": 8.37,
+          "min": 5.795,
+          "max": 10.053,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 18.715,
+          "min": 14.818,
+          "max": 20.237,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 33.649,
+          "min": 26.077,
+          "max": 34.179,
+          "n": 3
+        }
+      },
+      "dl_hetzner": {
+        "mb_per_s": {
+          "median": 1.059,
+          "min": 0.852,
+          "max": 1.555,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 6.863,
+          "min": 5.817,
+          "max": 8.756,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 8.871,
+          "min": 7.704,
+          "max": 11.069,
+          "n": 3
+        }
+      },
+      "upload": {
+        "mb_per_s": {
+          "median": 0.787,
+          "min": 0.755,
+          "max": 0.799,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 6.43,
+          "min": 5.845,
+          "max": 6.805,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 7.93,
+          "min": 7.19,
+          "max": 8.053,
+          "n": 3
+        }
+      },
+      "site": {
+        "connect_ms": {
+          "median": 51.615,
+          "min": 40.236,
+          "max": 114.27,
+          "n": 18
+        },
+        "tls_ms": {
+          "median": 113.846,
+          "min": 87.822,
+          "max": 323.446,
+          "n": 18
+        },
+        "first_byte_ms": {
+          "median": 206.91,
+          "min": 130.107,
+          "max": 570.059,
+          "n": 18
+        },
+        "total_ms": {
+          "median": 663.303,
+          "min": 350.217,
+          "max": 1147.255,
+          "n": 18
+        }
+      },
+      "parallel4": {
+        "mb_per_s": {
+          "median": 8.827,
+          "min": 8.374,
+          "max": 9.281,
+          "n": 2
+        },
+        "pi_cpu_pct": {
+          "median": 20.624,
+          "min": 20.22,
+          "max": 21.027,
+          "n": 2
+        },
+        "client_cpu_pct_of_core": {
+          "median": 36.208,
+          "min": 35.824,
+          "max": 36.593,
+          "n": 2
+        }
+      }
+    },
+    "eth0": {
+      "dl_cloudflare": {
+        "mb_per_s": {
+          "median": 19.959,
+          "min": 19.79,
+          "max": 20.186,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 17.026,
+          "min": 16.53,
+          "max": 26.824,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 2.826,
+          "min": 2.771,
+          "max": 3.593,
+          "n": 3
+        }
+      },
+      "dl_hetzner": {
+        "mb_per_s": {
+          "median": 19.734,
+          "min": 17.999,
+          "max": 19.8,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 15.622,
+          "min": 13.715,
+          "max": 16.882,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 3.168,
+          "min": 2.763,
+          "max": 3.24,
+          "n": 3
+        }
+      },
+      "upload": {
+        "mb_per_s": {
+          "median": 9.774,
+          "min": 9.0,
+          "max": 10.114,
+          "n": 3
+        },
+        "pi_cpu_pct": {
+          "median": 5.332,
+          "min": 4.839,
+          "max": 22.266,
+          "n": 3
+        },
+        "client_cpu_pct_of_core": {
+          "median": 2.427,
+          "min": 2.16,
+          "max": 3.519,
+          "n": 3
+        }
+      },
+      "site": {
+        "connect_ms": {
+          "median": 24.5,
+          "min": 20.078,
+          "max": 64.377,
+          "n": 18
+        },
+        "tls_ms": {
+          "median": 59.433,
+          "min": 48.205,
+          "max": 104.101,
+          "n": 18
+        },
+        "first_byte_ms": {
+          "median": 96.127,
+          "min": 71.821,
+          "max": 416.854,
+          "n": 18
+        },
+        "total_ms": {
+          "median": 190.403,
+          "min": 155.648,
+          "max": 464.233,
+          "n": 18
+        }
+      },
+      "parallel4": {
+        "mb_per_s": {
+          "median": 19.925,
+          "min": 19.897,
+          "max": 19.953,
+          "n": 2
+        },
+        "pi_cpu_pct": {
+          "median": 18.402,
+          "min": 17.546,
+          "max": 19.258,
+          "n": 2
+        },
+        "client_cpu_pct_of_core": {
+          "median": 3.487,
+          "min": 3.392,
+          "max": 3.581,
+          "n": 2
+        }
+      }
+    }
+  },
+  "failed_transfers": {},
+  "tunnel_carrier": {
+    "ja4": [],
+    "upload_rhythm": {
+      "client_writes": 42760,
+      "echo_share": 0.759,
+      "echo_lag_ms_median": 0,
+      "small_down_records_per_write": 1.468,
+      "download_seconds": 322,
+      "writes_per_download_second": 97.6,
+      "write_gap_ms_p10_p50_p90": [
+        1,
+        5,
+        21
+      ]
+    },
+    "connections": 1,
+    "max_opened_within_1s": 0,
+    "connections_over_1mb": 1,
+    "upload_only_connections": 0,
+    "records_up": {
+      "records": 45206,
+      "top8_share": 0.097,
+      "small_share": 0.014,
+      "max": 65177,
+      "most_common": [
+        [
+          138,
+          2615
+        ],
+        [
+          30,
+          494
+        ],
+        [
+          250,
+          406
+        ],
+        [
+          82,
+          346
+        ],
+        [
+          358,
+          152
+        ]
+      ]
+    },
+    "records_down": {
+      "records": 191400,
+      "top8_share": 0.73,
+      "small_share": 0.427,
+      "max": 61756,
+      "most_common": [
+        [
+          16401,
+          47702
+        ],
+        [
+          30,
+          33728
+        ],
+        [
+          35,
+          18591
+        ],
+        [
+          27,
+          13988
+        ],
+        [
+          4116,
+          12137
+        ]
+      ]
+    },
+    "phases": {
+      "streams_download": {
+        "seconds": 22,
+        "runs": 1,
+        "packets_per_min": 241682,
+        "kb_up_per_min": 83,
+        "kb_down_per_min": 800694
+      },
+      "streams_upload": {
+        "seconds": 74,
+        "runs": 1,
+        "packets_per_min": 64265,
+        "kb_up_per_min": 60002,
+        "kb_down_per_min": 943
+      },
+      "streams_sites": {
+        "seconds": 8,
+        "runs": 1,
+        "packets_per_min": 36113,
+        "kb_up_per_min": 754,
+        "kb_down_per_min": 70000
+      },
+      "streams_parallel": {
+        "seconds": 10,
+        "runs": 1,
+        "packets_per_min": 304572,
+        "kb_up_per_min": 181,
+        "kb_down_per_min": 1177442
+      },
+      "download": {
+        "seconds": 158,
+        "runs": 1,
+        "packets_per_min": 84247,
+        "kb_up_per_min": 7185,
+        "kb_down_per_min": 140951
+      },
+      "upload": {
+        "seconds": 96,
+        "runs": 1,
+        "packets_per_min": 71615,
+        "kb_up_per_min": 58402,
+        "kb_down_per_min": 5471
+      },
+      "sites": {
+        "seconds": 12,
+        "runs": 1,
+        "packets_per_min": 53993,
+        "kb_up_per_min": 4594,
+        "kb_down_per_min": 57351
+      },
+      "parallel": {
+        "seconds": 23,
+        "runs": 1,
+        "packets_per_min": 242420,
+        "kb_up_per_min": 39780,
+        "kb_down_per_min": 647035
+      },
+      "direct_runs": {
+        "seconds": 38,
+        "runs": 1,
+        "packets_per_min": 660,
+        "kb_up_per_min": 92,
+        "kb_down_per_min": 39
+      }
+    },
+    "connection_lifetimes": [
+      {
+        "opened_at_min": 0.0,
+        "minutes": 7.4,
+        "mb": 1375.0,
+        "seen_from_start": false
+      }
+    ]
+  }
+}
