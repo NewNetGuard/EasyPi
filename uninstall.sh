@@ -25,6 +25,8 @@ readonly -a EASYPI_UNITS=(
   easypi-chameleon-tcp.socket
   easypi-chameleon-client.service
   easypi-mobile-link-agent.service
+  easypi-mobile-home-tunnel-agent.service
+  easypi-mobile-home-tunnel.service
   easypi-stealth-guard.service
   easypi-stealth-dns.service
   easypi-stealth-resume.service
@@ -295,6 +297,79 @@ run_runtime_cleanup() {
     run_trusted_cleanup "${base_dir}" "${relative}" remove
   done
   run_trusted_cleanup "${base_dir}" scripts/settings/setup_prism_shadow.sh disable
+
+  clear_mobile_tunnel_runtime
+  clear_gateway_runtime "${base_dir}"
+}
+
+# The phone home tunnel's server adds these rules itself and does not remove
+# them when it stops. They are identified by the EasyPi-only interface and
+# subnet, so no administrator rule can match; rules carrying a comment are
+# never touched.
+readonly MOBILE_TUNNEL_IFACE="easypi-mobile0"
+readonly MOBILE_TUNNEL_SUBNET="10.77.0.0/24"
+
+clear_mobile_tunnel_runtime() {
+  local table="" chain="" line=""
+  local -a rule=()
+
+  if command -v iptables >/dev/null 2>&1 && command -v iptables-save >/dev/null 2>&1; then
+    for table in filter nat mangle; do
+      while IFS= read -r line; do
+        [[ "${line}" == *"--comment"* ]] && continue
+        read -r -a rule <<<"${line}"
+        chain="${rule[1]:-}"
+        [[ "${chain}" == "FORWARD" || "${chain}" == "POSTROUTING" ]] || continue
+        iptables -t "${table}" -D "${chain}" "${rule[@]:2}" >/dev/null 2>&1 || true
+      done < <(iptables-save -t "${table}" 2>/dev/null \
+        | grep -E -- "^-A (FORWARD|POSTROUTING) .*(-[io] ${MOBILE_TUNNEL_IFACE}( |$)|-s ${MOBILE_TUNNEL_SUBNET} )" || true)
+    done
+  fi
+  if command -v ufw >/dev/null 2>&1; then
+    local wan=""
+    wan="$(ip -4 route show default 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "dev") { print $(i + 1); exit }}')"
+    if [[ "${wan}" =~ ^[A-Za-z0-9_.-]{1,15}$ ]]; then
+      ufw route delete allow in on "${MOBILE_TUNNEL_IFACE}" out on "${wan}" >/dev/null 2>&1 || true
+    fi
+  fi
+  if ip link show "${MOBILE_TUNNEL_IFACE}" >/dev/null 2>&1; then
+    ip link delete "${MOBILE_TUNNEL_IFACE}" >/dev/null 2>&1 || true
+  fi
+}
+
+# Gateway mode records the interfaces it configured. Undo exactly that: NAT,
+# forwarding rules, the UFW route rule and IP forwarding, then persist the
+# cleaned rule set so a reboot cannot restore it.
+clear_gateway_runtime() {
+  local base_dir="$1"
+  local state="${base_dir}/data/network/gateway_mode.json"
+  local lan="" wan="" pair=""
+
+  if [[ -f "${state}" && ! -L "${state}" ]] && command -v python3 >/dev/null 2>&1; then
+    pair="$(python3 - "${state}" 2>/dev/null <<'PY'
+import json, re, sys
+try:
+    data = json.load(open(sys.argv[1], encoding="utf-8"))
+except (OSError, ValueError):
+    sys.exit(0)
+valid = re.compile(r"^[A-Za-z0-9_.-]{1,15}$")
+wan = str(data.get("wan_iface") or data.get("interface") or "")
+lan = str(data.get("lan_iface") or wan)
+if data.get("enabled") and valid.match(wan) and valid.match(lan):
+    print(lan, wan)
+PY
+)" || pair=""
+    read -r lan wan <<<"${pair}"
+  fi
+  if [[ -n "${wan}" ]]; then
+    run_trusted_cleanup "${base_dir}" scripts/settings/network_firewall.sh gateway-disable "${wan}" "${lan}"
+    if command -v ufw >/dev/null 2>&1; then
+      ufw route delete allow in on "${lan}" out on "${wan}" >/dev/null 2>&1 || true
+    fi
+  fi
+  if [[ -f /etc/iptables/rules.v4 ]]; then
+    run_trusted_cleanup "${base_dir}" scripts/settings/network_firewall.sh persist
+  fi
 }
 
 collect_installer_instances() {
@@ -334,8 +409,11 @@ remove_systemd_units() {
     warn "systemctl is unavailable; removing unit files without stopping loaded units"
   fi
 
+  # The installer keeps a timestamped .bak copy of every unit it replaces;
+  # drop-in directories belong to the same EasyPi unit.
   for unit in "${EASYPI_UNITS[@]}"; do
-    rm -f -- "/etc/systemd/system/${unit}"
+    rm -f -- "/etc/systemd/system/${unit}" "/etc/systemd/system/${unit}".bak-*
+    rm -rf -- "/etc/systemd/system/${unit}.d"
   done
 
   rm -f -- \
@@ -376,6 +454,8 @@ remove_host_integration() {
     /etc/nginx/sites-enabled/easypi-mobile-link \
     /etc/nginx/sites-available/easypi-mobile-link \
     /etc/sudoers.d/easypi \
+    /etc/nginx/sites-available/easypi.bak-* \
+    /etc/sudoers.d/easypi.bak-* \
     /etc/NetworkManager/dispatcher.d/90-easypi-ipv6-policy-guard \
     /etc/NetworkManager/dispatcher.d/90-easypi-dns-single-request \
     /etc/sysctl.d/99-easypi-netprotection.conf \
@@ -453,7 +533,7 @@ purge_state() {
     /var/log/easypi \
     /var/backups/easypi \
     /etc/easypi
-  rm -rf -- /etc/easypi-mobile-link
+  rm -rf -- /etc/easypi-mobile-link /etc/easypi-mobile-home
   rm -f -- \
     /var/log/easypi-cert-renewal.log \
     /etc/ssl/certs/easypi-selfsigned.crt \

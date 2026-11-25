@@ -89,6 +89,9 @@ class GatewayMutationHarness(NetworkGatewayMixin):
     async def _persist_firewall_rules(self) -> None:
         return None
 
+    async def _ufw_routing_allowed(self, _lan: str, _wan: str) -> bool:
+        return getattr(self, "routing_allowed", True)
+
     async def _ensure_gateway_fix_timer(self, *, enable: bool) -> None:
         del enable
 
@@ -218,6 +221,93 @@ def test_enable_returns_authoritative_status_for_immediate_ui_update() -> None:
     assert result["success"] is True
     assert result["status"]["enabled"] is True
     assert result["verification"]["effective"] is True
+
+
+def test_enable_fails_when_the_firewall_still_blocks_routed_traffic() -> None:
+    harness = GatewayMutationHarness()
+    harness.routing_allowed = False
+
+    result = asyncio.run(harness.enable_gateway_mode())
+
+    assert result["success"] is False
+    assert "blocks routed traffic" in result["error"]
+
+
+UFW_ACTIVE_DENY_ROUTED = """Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere                   # EasyPi SSH
+"""
+UFW_GATEWAY_ROUTE = (
+    "Anywhere on eth0           ALLOW FWD   Anywhere on eth0\n"
+    "Anywhere (v6) on eth0      ALLOW FWD   Anywhere (v6) on eth0\n"
+)
+
+
+class GatewayStatusHarness(NetworkGatewayMixin):
+    """Forwarding, NAT and a static address are in place; only UFW varies."""
+
+    def __init__(self, ufw_rc: int, ufw_output: str) -> None:
+        self.ufw_rc = ufw_rc
+        self.ufw_output = ufw_output
+
+    async def _get_default_route(self) -> dict:
+        return {"gateway": "10.23.1.1", "interface": "eth0"}
+
+    async def _read_ip_forward(self) -> bool:
+        return True
+
+    async def _get_interface_ip(self, _interface: str) -> tuple[str, bool]:
+        return "10.23.1.25", True
+
+    async def _has_nat_masquerade(self, _interface: str) -> bool:
+        return True
+
+    async def _detect_lan_wan_interfaces(self, _interface: str) -> tuple[str, str]:
+        return "eth0", "eth0"
+
+    async def _ufw_status_verbose(self) -> tuple[int, str]:
+        return self.ufw_rc, self.ufw_output
+
+
+def _status(ufw_rc: int, ufw_output: str) -> dict:
+    return asyncio.run(GatewayStatusHarness(ufw_rc, ufw_output).get_gateway_mode_status())
+
+
+def test_gateway_is_not_reported_enabled_while_ufw_drops_routed_traffic() -> None:
+    # Leftover forwarding and NAT without the UFW route rule: every client
+    # behind EasyPi would lose Internet access, so the UI must offer "Enable".
+    status = _status(0, UFW_ACTIVE_DENY_ROUTED)
+
+    assert status["forwarding_allowed"] is False
+    assert status["enabled"] is False
+
+
+def test_gateway_is_enabled_once_the_ufw_route_rule_exists() -> None:
+    status = _status(0, UFW_ACTIVE_DENY_ROUTED + UFW_GATEWAY_ROUTE)
+
+    assert status["forwarding_allowed"] is True
+    assert status["enabled"] is True
+
+
+def test_route_rule_for_another_interface_does_not_count() -> None:
+    other = "Anywhere on eth0           ALLOW FWD   Anywhere on easypi-mobile0\n"
+
+    assert _status(0, UFW_ACTIVE_DENY_ROUTED + other)["enabled"] is False
+
+
+def test_inactive_ufw_or_routed_allow_policy_does_not_block_gateway() -> None:
+    assert _status(0, "Status: inactive\n")["enabled"] is True
+    allow_routed = UFW_ACTIVE_DENY_ROUTED.replace("deny (routed)", "allow (routed)")
+    assert _status(0, allow_routed)["enabled"] is True
+
+
+def test_unreadable_ufw_status_counts_as_blocked() -> None:
+    assert _status(1, "")["enabled"] is False
 
 
 def test_disable_returns_authoritative_status_for_immediate_ui_update() -> None:

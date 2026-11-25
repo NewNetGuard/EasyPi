@@ -23,9 +23,9 @@ def _read_version() -> str:
     from pathlib import Path
     try:
         value = (Path(__file__).resolve().parents[1] / "VERSION").read_text(encoding="utf-8").strip()
-        return value or "1.1.6"
+        return value or "1.1.7"
     except OSError:
-        return "1.1.6"
+        return "1.1.7"
 
 
 __version__ = _read_version()

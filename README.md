@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img alt="Version 1.1.6" src="https://img.shields.io/badge/version-1.1.6-FF6B35?style=for-the-badge" /></a>
+  <a href="VERSION"><img alt="Version 1.1.7" src="https://img.shields.io/badge/version-1.1.7-FF6B35?style=for-the-badge" /></a>
   <a href="#supported-platform"><img alt="Raspberry Pi OS Trixie" src="https://img.shields.io/badge/Raspberry%20Pi%20OS-Trixie-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" /></a>
   <a href="#project-status"><img alt="Active development" src="https://img.shields.io/badge/status-active%20development-F59E0B?style=for-the-badge" /></a>
   <a href="LICENSE"><img alt="Source available license" src="https://img.shields.io/badge/license-source%20available-334155?style=for-the-badge" /></a>
@@ -65,7 +65,7 @@ EasyPi is not automatically in the path of every packet. DNS enforcement require
 
 | | Current state |
 |---|---|
-| **Version** | [`1.1.6`](VERSION) |
+| **Version** | [`1.1.7`](VERSION) |
 | **Official binary target** | Raspberry Pi OS Lite 64-bit · Debian Trixie · `aarch64` |
 | **Development** | Active; behavior can vary with hardware, upstream routing, IPv6, and third-party services |
 | **Binary installation** | The signed-install contract exists, but the independent bootstrap/key distribution channel is not yet complete |
@@ -295,16 +295,22 @@ For a personal build from a clone of the published source repository, run `bash 
 
 ### First access after a verified install
 
-Open the address printed by the installer:
+1. **Open EasyPi.** Use the address printed at the end of the installer:
 
-```text
-https://<pi-address>/
-https://easypi.local/
-```
+   ```text
+   https://<pi-address>/
+   https://easypi.local/
+   ```
 
-- `easypi.local` can take 30–90 seconds to appear through mDNS.
-- The default certificate is locally generated. Verify that the address belongs to your Pi before accepting a local certificate warning.
-- There are no default credentials. The installer prints a one-time administrator setup token that also serves as the recovery token; save it securely and offline.
+   `easypi.local` can take 30–90 seconds to appear through mDNS; the IP address works immediately.
+2. **Accept or trust the certificate.** EasyPi uses its own local certificate authority, so the browser warns on the first visit. Check that the address belongs to your Pi, then either continue once or remove the warning for good by importing `https://<pi-address>/ca.pem` as a trusted root certificate. The installer prints the steps for Windows, macOS, Linux, Android and iOS.
+3. **Create the administrator.** The first page is **EasyPi Setup**; press **Continue**. On **Create Admin Account** choose a username and a strong password and paste the **setup token** printed at the end of the installer. There are no default credentials. The same token is your recovery token: store it securely and offline.
+4. **Choose how your network uses EasyPi** in the **Network Protection** card on the dashboard:
+   - **DNS Only** — in your router's DHCP settings, set the DNS server to the EasyPi address. Domain filtering, parental controls and DNS statistics start working for every device.
+   - **Full Gateway** — in your router's DHCP settings, set both the gateway and the DNS server to the EasyPi address and save. Then press **I configured the router — Enable Gateway** in the card. When it shows **Full Gateway Mode Active**, all traffic passes through EasyPi. If devices lose Internet access, press **Fix Gateway (Internet Down)**; **Disable Gateway Mode** returns to DNS only.
+
+   Devices pick up the new settings when they reconnect to the network or renew their DHCP lease.
+5. **Follow the Getting Started card** on the dashboard for the remaining steps, such as protection profiles for your devices.
 
 <a id="operations"></a>
 
@@ -499,6 +505,6 @@ EasyPi is **source available**, not OSI open source. The [EasyPi Source Availabl
 Contributions are welcome through [GitHub Issues and pull requests](https://github.com/NewNetGuard/EasyPi). You may fork the repository on GitHub and publish source code changes in your fork for non-commercial purposes, provided the fork keeps the license and all notices and is not presented as an official release. Forks may contain source code only: built binaries, installers, release archives, and container images may not be distributed, including through a fork's releases. These permissions do not grant commercial deployment or general redistribution rights. Personal household use and private builds signed with your own key are permitted. See [LICENSE](LICENSE) for the complete terms.
 
 <p align="center">
-  <sub>EasyPi v1.1.6 · Raspberry Pi OS Trixie · Active development</sub><br />
+  <sub>EasyPi v1.1.7 · Raspberry Pi OS Trixie · Active development</sub><br />
   <a href="#top">Back to top</a>
 </p>

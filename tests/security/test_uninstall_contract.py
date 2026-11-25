@@ -83,8 +83,122 @@ def test_uninstaller_covers_every_locally_installed_easypi_unit() -> None:
         "easypi-duckdns.timer",
         "easypi-duckdns.service",
         "easypi-installer@.service",
+        "easypi-mobile-link-agent.service",
+        "easypi-mobile-home-tunnel.service",
+        "easypi-mobile-home-tunnel-agent.service",
     }
     assert not {unit for unit in expected if unit not in content}
+
+
+def test_uninstaller_removes_installer_backups_and_drop_ins() -> None:
+    content = UNINSTALL.read_text(encoding="utf-8")
+    assert '"/etc/systemd/system/${unit}".bak-*' in content
+    assert 'rm -rf -- "/etc/systemd/system/${unit}.d"' in content
+    assert "/etc/nginx/sites-available/easypi.bak-*" in content
+    assert "/etc/sudoers.d/easypi.bak-*" in content
+    assert "/etc/easypi-mobile-home" in content
+
+
+def _host_path(path: Path) -> str:
+    value = path.resolve().as_posix()
+    if len(value) >= 3 and value[1:3] == ":/":
+        return f"/mnt/{value[0].lower()}{value[2:]}"
+    return value
+
+
+def _run_uninstall_function(tmp_path: Path, body: str) -> list[str]:
+    """Source uninstall.sh (without running main) and call one function with
+    fake iptables/ufw/ip commands that only record what they are asked.
+
+    run_trusted_cleanup is replaced from a sourced file because shell code
+    passed inline through ``bash -c`` is expanded early by the WSL launcher."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    calls = tmp_path / "calls"
+    stub = tmp_path / "stub.sh"
+    stub.write_text(
+        'run_trusted_cleanup() { printf "cleanup %s\\n" "$*" >> "$CALLS"; }\n',
+        encoding="utf-8",
+        newline="\n",
+    )
+    fakes = {
+        "iptables-save": r"""#!/bin/bash
+case "$2" in
+  nat) printf '%s\n' '-A POSTROUTING -s 10.77.0.0/24 -o eth0 -j MASQUERADE' \
+         '-A POSTROUTING -o eth0 -j MASQUERADE' ;;
+  filter) printf '%s\n' '-A FORWARD -i easypi-mobile0 -j ACCEPT' \
+            '-A FORWARD -o easypi-mobile0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT' \
+            '-A FORWARD -i easypi-mobile0 -m comment --comment "admin rule" -j ACCEPT' \
+            '-A FORWARD -i easypi-mobile00 -j ACCEPT' \
+            '-A ufw-user-forward -i easypi-mobile0 -o eth0 -j ACCEPT' ;;
+  mangle) printf '%s\n' '-A FORWARD -i easypi-mobile0 -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu' ;;
+esac
+""",
+        "iptables": '#!/bin/bash\nprintf "iptables %s\\n" "$*" >> "$CALLS"\n',
+        "ufw": '#!/bin/bash\nprintf "ufw %s\\n" "$*" >> "$CALLS"\n',
+        "ip": r"""#!/bin/bash
+if [[ "$*" == "-4 route show default" ]]; then echo "default via 192.0.2.1 dev eth0 proto static"; exit 0; fi
+if [[ "$1 $2" == "link show" ]]; then exit 0; fi
+printf 'ip %s\n' "$*" >> "$CALLS"
+""",
+    }
+    for name, text in fakes.items():
+        (bin_dir / name).write_text(text, encoding="utf-8", newline="\n")
+    bash = shutil.which("bash")
+    assert bash is not None
+    script = (
+        f"chmod 700 {shlex.quote(_host_path(bin_dir))}/* && "
+        f"source {UNINSTALL_SHELL_PATH} && "
+        f"export PATH={shlex.quote(_host_path(bin_dir))}:/usr/bin:/bin "
+        f"CALLS={shlex.quote(_host_path(calls))} && "
+        f"source {shlex.quote(_host_path(stub))} && {body}"
+    )
+    result = subprocess.run(
+        [bash, "-c", script], cwd=ROOT, check=False, capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    return calls.read_text(encoding="utf-8").splitlines() if calls.exists() else []
+
+
+def test_uninstaller_removes_only_the_phone_tunnel_rules(tmp_path: Path) -> None:
+    calls = _run_uninstall_function(tmp_path, "clear_mobile_tunnel_runtime")
+
+    assert calls == [
+        "iptables -t filter -D FORWARD -i easypi-mobile0 -j ACCEPT",
+        "iptables -t filter -D FORWARD -o easypi-mobile0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
+        "iptables -t nat -D POSTROUTING -s 10.77.0.0/24 -o eth0 -j MASQUERADE",
+        "iptables -t mangle -D FORWARD -i easypi-mobile0 -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu",
+        "ufw route delete allow in on easypi-mobile0 out on eth0",
+        "ip link delete easypi-mobile0",
+    ]
+
+
+def test_uninstaller_undoes_exactly_the_recorded_gateway_mode(tmp_path: Path) -> None:
+    network = tmp_path / "prefix" / "data" / "network"
+    network.mkdir(parents=True)
+    (network / "gateway_mode.json").write_text(
+        '{"enabled": true, "interface": "eth0", "lan_iface": "wlan0", "wan_iface": "eth0"}',
+        encoding="utf-8",
+    )
+    body = f"clear_gateway_runtime {shlex.quote(_host_path(tmp_path / 'prefix'))}"
+    calls = _run_uninstall_function(tmp_path, body)
+
+    prefix = _host_path(tmp_path / "prefix")
+    assert calls[:2] == [
+        f"cleanup {prefix} scripts/settings/network_firewall.sh gateway-disable eth0 wlan0",
+        "ufw route delete allow in on wlan0 out on eth0",
+    ]
+
+
+def test_uninstaller_leaves_routing_alone_without_gateway_mode(tmp_path: Path) -> None:
+    network = tmp_path / "prefix" / "data" / "network"
+    network.mkdir(parents=True)
+    (network / "gateway_mode.json").write_text('{"enabled": false}', encoding="utf-8")
+    body = f"clear_gateway_runtime {shlex.quote(_host_path(tmp_path / 'prefix'))}"
+
+    calls = _run_uninstall_function(tmp_path, body)
+
+    assert not [call for call in calls if "gateway-disable" in call or "ufw route" in call]
 
 
 def test_uninstaller_has_no_interactive_or_unvalidated_recursive_delete() -> None:

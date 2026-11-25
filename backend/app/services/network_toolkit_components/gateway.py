@@ -75,11 +75,26 @@ class NetworkGatewayMixin:
             nat_enabled = (
                 await self._has_nat_masquerade(interface) if interface else False
             )
-            enabled = bool(ip_forward and nat_enabled and is_static is True)
+            lan_iface, wan_iface = await self._detect_lan_wan_interfaces(interface)
+            # Forwarding and NAT alone do not prove that routed traffic passes:
+            # UFW's default "deny (routed)" drops it unless gateway mode added
+            # its route rule. Without this check the UI reports gateway mode as
+            # enabled while every client behind EasyPi loses Internet access.
+            forwarding_allowed = (
+                await self._ufw_routing_allowed(
+                    lan_iface or interface, wan_iface or interface
+                )
+                if interface
+                else False
+            )
+            enabled = bool(
+                ip_forward and nat_enabled and is_static is True and forwarding_allowed
+            )
             return {
                 "enabled": enabled,
                 "static_ip": is_static,
                 "nat_enabled": nat_enabled,
+                "forwarding_allowed": forwarding_allowed,
                 "ip_forward": ip_forward,
                 "current_ip": current_ip or None,
                 "current_gateway": gateway_ip or None,
@@ -242,6 +257,11 @@ class NetworkGatewayMixin:
 
         # Ensure UFW allows routed traffic (otherwise FORWARD policy may drop)
         await self._configure_ufw_route(lan_iface or wan_iface, wan_iface, enable=True)
+        if not await self._ufw_routing_allowed(lan_iface or wan_iface, wan_iface):
+            return {
+                "success": False,
+                "error": "The firewall still blocks routed traffic; clients behind EasyPi would have no Internet access.",
+            }
         await self._persist_firewall_rules()
         await self._ensure_gateway_fix_timer(enable=True)
 
@@ -495,7 +515,7 @@ class NetworkGatewayMixin:
         target = f"-o {interface} -j MASQUERADE"
         return any(target in line and " -s " not in line for line in out.splitlines())
 
-    async def _ufw_active(self) -> bool:
+    async def _ufw_status_verbose(self) -> tuple[int, str]:
         runner = os.getenv("EASYPI_RUNNER", "/opt/EasyPi/scripts/runner")
         rc, out, _ = await self._run_cmd(
             [
@@ -507,7 +527,33 @@ class NetworkGatewayMixin:
                 "verbose",
             ]
         )
+        return rc, out
+
+    async def _ufw_active(self) -> bool:
+        rc, out = await self._ufw_status_verbose()
         return rc == 0 and "Status: active" in out
+
+    async def _ufw_routing_allowed(self, lan_iface: str, wan_iface: str) -> bool:
+        """True when UFW lets LAN clients' traffic be routed out of the WAN.
+
+        An inactive UFW, a default "allow (routed)" policy or the route rule
+        that gateway mode adds ("Anywhere on WAN  ALLOW FWD  Anywhere on LAN")
+        all qualify. An unreadable status counts as blocked.
+        """
+        if not lan_iface or not wan_iface:
+            return False
+        rc, out = await self._ufw_status_verbose()
+        if rc != 0:
+            return False
+        if "Status: active" not in out:
+            return True
+        if re.search(r"\ballow \(routed\)", out):
+            return True
+        rule = re.compile(
+            rf"^Anywhere on {re.escape(wan_iface)}\s+ALLOW FWD\s+Anywhere on {re.escape(lan_iface)}(\s|$)",
+            re.MULTILINE,
+        )
+        return bool(rule.search(out))
 
     async def _configure_ufw_route(
         self, lan_iface: str, wan_iface: str, enable: bool

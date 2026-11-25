@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img alt="Version 1.1.6" src="https://img.shields.io/badge/version-1.1.6-FF6B35?style=for-the-badge" /></a>
+  <a href="VERSION"><img alt="Version 1.1.7" src="https://img.shields.io/badge/version-1.1.7-FF6B35?style=for-the-badge" /></a>
   <a href="#supported-platform"><img alt="Raspberry Pi OS Trixie" src="https://img.shields.io/badge/Raspberry%20Pi%20OS-Trixie-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" /></a>
   <a href="#project-status"><img alt="Aktive Entwicklung" src="https://img.shields.io/badge/status-active%20development-F59E0B?style=for-the-badge" /></a>
   <a href="LICENSE"><img alt="Source-Available-Lizenz" src="https://img.shields.io/badge/license-source%20available-334155?style=for-the-badge" /></a>
@@ -65,7 +65,7 @@ EasyPi liegt nicht automatisch im Pfad jedes Pakets. Für die DNS-Durchsetzung m
 
 | | Aktueller Stand |
 |---|---|
-| **Version** | [`1.1.6`](VERSION) |
+| **Version** | [`1.1.7`](VERSION) |
 | **Offizielles Binärziel** | Raspberry Pi OS Lite 64-bit · Debian Trixie · `aarch64` |
 | **Entwicklung** | Aktiv; das Verhalten kann je nach Hardware, vorgeschaltetem Routing, IPv6 und Drittanbieterdiensten variieren |
 | **Binärinstallation** | Der Vertrag für signierte Installationen ist definiert, der unabhängige Auslieferungskanal für Bootstrap und Schlüssel jedoch noch nicht vollständig |
@@ -291,16 +291,22 @@ Release-Verantwortliche sollten mit [`build_all.sh`](build_all.sh) bauen, das si
 
 ### Erster Zugriff nach einer geprüften Installation
 
-Öffnen Sie die vom Installer ausgegebene Adresse:
+1. **EasyPi öffnen.** Verwenden Sie die Adresse, die der Installer am Ende ausgibt:
 
-```text
-https://<pi-address>/
-https://easypi.local/
-```
+   ```text
+   https://<pi-address>/
+   https://easypi.local/
+   ```
 
-- Es kann 30–90 Sekunden dauern, bis `easypi.local` über mDNS erscheint.
-- Das Standardzertifikat wird lokal erzeugt. Prüfen Sie, dass die Adresse zu Ihrem Pi gehört, bevor Sie eine lokale Zertifikatswarnung akzeptieren.
-- Es gibt keine Standardzugangsdaten. Der Installer gibt ein einmaliges Administrator-Setup-Token aus, das zugleich als Recovery-Token dient; bewahren Sie es sicher und offline auf.
+   `easypi.local` kann über mDNS 30–90 Sekunden brauchen; die IP-Adresse funktioniert sofort.
+2. **Zertifikat akzeptieren oder als vertrauenswürdig einstufen.** EasyPi verwendet eine eigene lokale Zertifizierungsstelle, daher warnt der Browser beim ersten Besuch. Prüfen Sie, dass die Adresse zu Ihrem Pi gehört, und fahren Sie einmalig fort oder entfernen Sie die Warnung dauerhaft, indem Sie `https://<pi-address>/ca.pem` als vertrauenswürdiges Stammzertifikat importieren. Der Installer gibt die Schritte für Windows, macOS, Linux, Android und iOS aus.
+3. **Administrator anlegen.** Die erste Seite ist **EasyPi Setup**; drücken Sie **Continue**. Wählen Sie unter **Create Admin Account** einen Benutzernamen und ein starkes Passwort und fügen Sie das **Setup-Token** ein, das der Installer am Ende ausgibt. Es gibt keine Standard-Zugangsdaten. Dasselbe Token ist Ihr Wiederherstellungs-Token: Bewahren Sie es sicher und offline auf.
+4. **Festlegen, wie Ihr Netzwerk EasyPi nutzt** – in der Karte **Network Protection** im Dashboard:
+   - **DNS Only** – setzen Sie in den DHCP-Einstellungen Ihres Routers den DNS-Server auf die EasyPi-Adresse. Domainfilter, Kindersicherung und DNS-Statistiken wirken dann für alle Geräte.
+   - **Full Gateway** – setzen Sie in den DHCP-Einstellungen Ihres Routers Gateway und DNS-Server auf die EasyPi-Adresse und speichern Sie. Drücken Sie danach in der Karte **I configured the router — Enable Gateway**. Sobald **Full Gateway Mode Active** erscheint, läuft der gesamte Verkehr über EasyPi. Verlieren Geräte den Internetzugang, drücken Sie **Fix Gateway (Internet Down)**; **Disable Gateway Mode** kehrt zu DNS Only zurück.
+
+   Geräte übernehmen die neuen Einstellungen, sobald sie sich neu mit dem Netzwerk verbinden oder ihre DHCP-Lease erneuern.
+5. **Folgen Sie der Karte Getting Started** im Dashboard für die übrigen Schritte, etwa Schutzprofile für Ihre Geräte.
 
 <a id="operations"></a>
 
@@ -495,6 +501,6 @@ EasyPi ist **source available** und keine Open-Source-Software nach der Definiti
 Fehlermeldungen und Pull Requests sind im [offiziellen EasyPi-Repository](https://github.com/NewNetGuard/EasyPi) willkommen. Sie dürfen das Repository auf GitHub forken und Quellcodeänderungen in Ihrem Fork zu nichtkommerziellen Zwecken veröffentlichen, sofern der Fork die Lizenz und alle Hinweise beibehält und nicht als offizielles Release ausgegeben wird. Ein Fork darf nur Quellcode enthalten: Fertige Binärdateien, Installer, Release-Archive und Container-Images dürfen nicht verbreitet werden, auch nicht über die Releases eines Forks. Diese Rechte erlauben weder den kommerziellen Betrieb noch die allgemeine Weiterverteilung. Die persönliche Nutzung im Haushalt und private Builds, die mit dem eigenen Schlüssel signiert werden, sind erlaubt. Die vollständigen Bedingungen stehen in der [LICENSE](LICENSE).
 
 <p align="center">
-  <sub>EasyPi v1.1.6 · Raspberry Pi OS Trixie · Aktive Entwicklung</sub><br />
+  <sub>EasyPi v1.1.7 · Raspberry Pi OS Trixie · Aktive Entwicklung</sub><br />
   <a href="#top">Nach oben</a>
 </p>
