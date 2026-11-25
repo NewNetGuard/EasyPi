@@ -106,7 +106,9 @@ def _host_path(path: Path) -> str:
     return value
 
 
-def _run_uninstall_function(tmp_path: Path, body: str) -> list[str]:
+def _run_uninstall_function(
+    tmp_path: Path, body: str, extra_fakes: dict[str, str] | None = None
+) -> list[str]:
     """Source uninstall.sh (without running main) and call one function with
     fake iptables/ufw/ip commands that only record what they are asked.
 
@@ -142,6 +144,7 @@ if [[ "$1 $2" == "link show" ]]; then exit 0; fi
 printf 'ip %s\n' "$*" >> "$CALLS"
 """,
     }
+    fakes.update(extra_fakes or {})
     for name, text in fakes.items():
         (bin_dir / name).write_text(text, encoding="utf-8", newline="\n")
     bash = shutil.which("bash")
@@ -199,6 +202,54 @@ def test_uninstaller_leaves_routing_alone_without_gateway_mode(tmp_path: Path) -
     calls = _run_uninstall_function(tmp_path, body)
 
     assert not [call for call in calls if "gateway-disable" in call or "ufw route" in call]
+
+
+ACCOUNT_FAKES = {
+    # easypi-outline is an administrator's login with the same name (UID 1001)
+    # and must survive; easypi-build does not exist.
+    "id": r"""#!/bin/bash
+case "$3" in
+  easypi) echo 997 ;;
+  easypi-chameleon|easypi-mobile-link|easypi-stealth-dns|easypi-prism-tls) echo 996 ;;
+  easypi-outline) echo 1001 ;;
+  *) exit 1 ;;
+esac
+""",
+    "getent": r"""#!/bin/bash
+case "$2" in
+  easypi) echo "easypi:x:997:sb" ;;
+  easypi-chameleon|easypi-mobile-link|easypi-stealth-dns|easypi-prism-tls) echo "$2:x:996:" ;;
+  easypi-outline) echo "easypi-outline:x:1001:" ;;
+  *) exit 2 ;;
+esac
+""",
+    "userdel": '#!/bin/bash\nprintf "userdel %s\\n" "$*" >> "$CALLS"\n',
+    "groupdel": '#!/bin/bash\nprintf "groupdel %s\\n" "$*" >> "$CALLS"\n',
+}
+
+
+def test_purge_removes_only_easypi_system_accounts(tmp_path: Path) -> None:
+    calls = _run_uninstall_function(tmp_path, "remove_system_accounts", ACCOUNT_FAKES)
+
+    removed = {call.split()[-1] for call in calls if call.startswith("userdel")}
+    assert removed == {
+        "easypi",
+        "easypi-chameleon",
+        "easypi-mobile-link",
+        "easypi-stealth-dns",
+        "easypi-prism-tls",
+    }
+    assert "easypi-outline" not in {call.split()[-1] for call in calls}
+    assert "groupdel -- easypi" in calls
+
+
+def test_accounts_are_removed_only_with_purge_and_timer_stamps_always() -> None:
+    content = UNINSTALL.read_text(encoding="utf-8")
+    main = content[content.index("main() {"):]
+    assert 'purge_state "${EASYPI_PREFIX}"\n    remove_system_accounts' in main
+    assert main.count("remove_system_accounts") == 1
+    assert '"/var/lib/systemd/timers/stamp-${unit}"' in content
+    assert "remove_system_account go2rtc" in content
 
 
 def test_uninstaller_has_no_interactive_or_unvalidated_recursive_delete() -> None:

@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img alt="Version 1.1.7" src="https://img.shields.io/badge/version-1.1.7-FF6B35?style=for-the-badge" /></a>
+  <a href="VERSION"><img alt="Version 1.1.8" src="https://img.shields.io/badge/version-1.1.8-FF6B35?style=for-the-badge" /></a>
   <a href="#supported-platform"><img alt="Raspberry Pi OS Trixie" src="https://img.shields.io/badge/Raspberry%20Pi%20OS-Trixie-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" /></a>
   <a href="#project-status"><img alt="Aktive Entwicklung" src="https://img.shields.io/badge/status-active%20development-F59E0B?style=for-the-badge" /></a>
   <a href="LICENSE"><img alt="Source-Available-Lizenz" src="https://img.shields.io/badge/license-source%20available-334155?style=for-the-badge" /></a>
@@ -65,7 +65,7 @@ EasyPi liegt nicht automatisch im Pfad jedes Pakets. Für die DNS-Durchsetzung m
 
 | | Aktueller Stand |
 |---|---|
-| **Version** | [`1.1.7`](VERSION) |
+| **Version** | [`1.1.8`](VERSION) |
 | **Offizielles Binärziel** | Raspberry Pi OS Lite 64-bit · Debian Trixie · `aarch64` |
 | **Entwicklung** | Aktiv; das Verhalten kann je nach Hardware, vorgeschaltetem Routing, IPv6 und Drittanbieterdiensten variieren |
 | **Binärinstallation** | Der Vertrag für signierte Installationen ist definiert, der unabhängige Auslieferungskanal für Bootstrap und Schlüssel jedoch noch nicht vollständig |
@@ -501,6 +501,6 @@ EasyPi ist **source available** und keine Open-Source-Software nach der Definiti
 Fehlermeldungen und Pull Requests sind im [offiziellen EasyPi-Repository](https://github.com/NewNetGuard/EasyPi) willkommen. Sie dürfen das Repository auf GitHub forken und Quellcodeänderungen in Ihrem Fork zu nichtkommerziellen Zwecken veröffentlichen, sofern der Fork die Lizenz und alle Hinweise beibehält und nicht als offizielles Release ausgegeben wird. Ein Fork darf nur Quellcode enthalten: Fertige Binärdateien, Installer, Release-Archive und Container-Images dürfen nicht verbreitet werden, auch nicht über die Releases eines Forks. Diese Rechte erlauben weder den kommerziellen Betrieb noch die allgemeine Weiterverteilung. Die persönliche Nutzung im Haushalt und private Builds, die mit dem eigenen Schlüssel signiert werden, sind erlaubt. Die vollständigen Bedingungen stehen in der [LICENSE](LICENSE).
 
 <p align="center">
-  <sub>EasyPi v1.1.7 · Raspberry Pi OS Trixie · Aktive Entwicklung</sub><br />
+  <sub>EasyPi v1.1.8 · Raspberry Pi OS Trixie · Aktive Entwicklung</sub><br />
   <a href="#top">Nach oben</a>
 </p>

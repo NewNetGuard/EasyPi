@@ -414,6 +414,8 @@ remove_systemd_units() {
   for unit in "${EASYPI_UNITS[@]}"; do
     rm -f -- "/etc/systemd/system/${unit}" "/etc/systemd/system/${unit}".bak-*
     rm -rf -- "/etc/systemd/system/${unit}.d"
+    # Persistent timers leave a last-run stamp behind.
+    [[ "${unit}" == *.timer ]] && rm -f -- "/var/lib/systemd/timers/stamp-${unit}"
   done
 
   rm -f -- \
@@ -514,8 +516,52 @@ remove_managed_go2rtc() {
     [[ "$(realpath -sm -- "${directory}")" == "${directory}" ]] \
       || die "Refusing unsafe go2rtc purge path"
     rm -rf -- "${directory}"
+    remove_system_account go2rtc
     info "EasyPi-managed go2rtc state was purged."
   fi
+}
+
+# System accounts the installer creates. They own the purged state, so they
+# are removed only with --purge; a retained installation keeps its owners.
+readonly -a EASYPI_SYSTEM_ACCOUNTS=(
+  easypi-chameleon
+  easypi-mobile-link
+  easypi-stealth-dns
+  easypi-outline
+  easypi-prism-tls
+  easypi-build
+  easypi
+)
+
+# Remove one account and its same-named group, but only when both are system
+# accounts (ID 1-999): an administrator's login with the same name is kept.
+remove_system_account() {
+  local name="$1"
+  local id=""
+
+  if id=$(id -u -- "${name}" 2>/dev/null); then
+    if (( id > 0 && id < 1000 )); then
+      userdel -- "${name}" >/dev/null 2>&1 || warn "Could not remove system account ${name}"
+    else
+      warn "Kept non-system account ${name} (UID ${id})"
+    fi
+  fi
+  if id=$(getent group "${name}" 2>/dev/null | cut -d: -f3) && [[ -n "${id}" ]]; then
+    if (( id > 0 && id < 1000 )); then
+      groupdel -- "${name}" >/dev/null 2>&1 || warn "Could not remove system group ${name}"
+    else
+      warn "Kept non-system group ${name} (GID ${id})"
+    fi
+  fi
+}
+
+remove_system_accounts() {
+  local name=""
+
+  info "Removing EasyPi system accounts..."
+  for name in "${EASYPI_SYSTEM_ACCOUNTS[@]}"; do
+    remove_system_account "${name}"
+  done
 }
 
 purge_state() {
@@ -556,6 +602,7 @@ main() {
 
   if (( PURGE == 1 )); then
     purge_state "${EASYPI_PREFIX}"
+    remove_system_accounts
   else
     info "EasyPi services were removed; application data was preserved."
     printf '  Retained prefix: %s\n' "${EASYPI_PREFIX}"

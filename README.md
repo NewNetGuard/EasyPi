@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img alt="Version 1.1.7" src="https://img.shields.io/badge/version-1.1.7-FF6B35?style=for-the-badge" /></a>
+  <a href="VERSION"><img alt="Version 1.1.8" src="https://img.shields.io/badge/version-1.1.8-FF6B35?style=for-the-badge" /></a>
   <a href="#supported-platform"><img alt="Raspberry Pi OS Trixie" src="https://img.shields.io/badge/Raspberry%20Pi%20OS-Trixie-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" /></a>
   <a href="#project-status"><img alt="Active development" src="https://img.shields.io/badge/status-active%20development-F59E0B?style=for-the-badge" /></a>
   <a href="LICENSE"><img alt="Source available license" src="https://img.shields.io/badge/license-source%20available-334155?style=for-the-badge" /></a>
@@ -65,7 +65,7 @@ EasyPi is not automatically in the path of every packet. DNS enforcement require
 
 | | Current state |
 |---|---|
-| **Version** | [`1.1.7`](VERSION) |
+| **Version** | [`1.1.8`](VERSION) |
 | **Official binary target** | Raspberry Pi OS Lite 64-bit · Debian Trixie · `aarch64` |
 | **Development** | Active; behavior can vary with hardware, upstream routing, IPv6, and third-party services |
 | **Binary installation** | The signed-install contract exists, but the independent bootstrap/key distribution channel is not yet complete |
@@ -505,6 +505,6 @@ EasyPi is **source available**, not OSI open source. The [EasyPi Source Availabl
 Contributions are welcome through [GitHub Issues and pull requests](https://github.com/NewNetGuard/EasyPi). You may fork the repository on GitHub and publish source code changes in your fork for non-commercial purposes, provided the fork keeps the license and all notices and is not presented as an official release. Forks may contain source code only: built binaries, installers, release archives, and container images may not be distributed, including through a fork's releases. These permissions do not grant commercial deployment or general redistribution rights. Personal household use and private builds signed with your own key are permitted. See [LICENSE](LICENSE) for the complete terms.
 
 <p align="center">
-  <sub>EasyPi v1.1.7 · Raspberry Pi OS Trixie · Active development</sub><br />
+  <sub>EasyPi v1.1.8 · Raspberry Pi OS Trixie · Active development</sub><br />
   <a href="#top">Back to top</a>
 </p>
