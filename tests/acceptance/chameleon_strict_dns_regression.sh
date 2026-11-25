@@ -51,6 +51,14 @@ tunnel_link="epst${suffix}"
 tmp_dir="$(mktemp -d)"
 dns_pid=""
 proxy_pid=""
+# The proxy runs as nobody, which may not be able to traverse the checkout
+# (for example a CI home directory with mode 0750). Run a byte-identical copy
+# of the production proxy from a directory nobody can read.
+proxy_dir="$tmp_dir/proxy"
+mkdir -m 0755 "$proxy_dir"
+chmod 0711 "$tmp_dir"
+install -m 0644 "$root_dir/easypi_netprotection/stealth_dns.py" "$proxy_dir/stealth_dns.py"
+cmp -s "$root_dir/easypi_netprotection/stealth_dns.py" "$proxy_dir/stealth_dns.py"
 
 cleanup() {
     for process_id in "$proxy_pid" "$dns_pid"; do
@@ -157,7 +165,7 @@ ip netns exec "$gateway_ns" setpriv \
     --reuid="$nobody_uid" --regid="$nobody_gid" --clear-groups \
     env EASYPI_STEALTH_DNS_UPSTREAMS=1.1.1.1 \
     EASYPI_STEALTH_DNS_TIMEOUT=0.3 \
-    python3 "$root_dir/easypi_netprotection/stealth_dns.py" \
+    python3 "$proxy_dir/stealth_dns.py" \
     >"$tmp_dir/proxy.log" 2>&1 &
 proxy_pid="$!"
 sleep 0.4

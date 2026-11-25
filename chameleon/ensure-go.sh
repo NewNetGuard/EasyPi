@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Print the path to the pinned Go 1.27.3 toolchain, provisioning it automatically
+# Print the path to the pinned Go 1.27.4 toolchain, provisioning it automatically
 # when the build host doesn't have one — the way npm/pip fetch what they need.
 #
 # Resolution order (first hit wins):
@@ -15,8 +15,8 @@ set -euo pipefail
 
 REQ_MAJOR=1
 REQ_MINOR=27
-REQ_PATCH=3
-PINNED_GO_VERSION=1.27.3
+REQ_PATCH=4
+PINNED_GO_VERSION=1.27.4
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Build caches live in .build/ of the project that owns this tree: a Chameleon
 # checkout keeps them inside itself; a project that vendors Chameleon (EasyPi)
@@ -57,15 +57,15 @@ os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 case "$(uname -m)" in
   aarch64|arm64)
     arch=arm64
-    sum=a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49
+    sum=3392582988a273a87ab5043ee1b2c9c17a2c3c00580bf9326c47a2e0aaaeac92
     ;;
   x86_64|amd64)
     arch=amd64
-    sum=65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40
+    sum=7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840
     ;;
   armv6l|armv7l)
     arch=armv6l
-    sum=d6f4e11dd7157030d7ac11c51c8f73201a2db932d593c3106b1da11cc32bfdf8
+    sum=e50964c41c6e187375387939e2f380de7250eba44e2259dfeb75c540d9d585c3
     ;;
   *) log "unsupported CPU arch $(uname -m)"; exit 1 ;;
 esac

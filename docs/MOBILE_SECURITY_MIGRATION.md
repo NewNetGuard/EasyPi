@@ -41,7 +41,7 @@ The mobile file API denies hidden/internal Cloud paths both before and after
 path resolution. This includes downloads, previews and deletion. Do not move
 internal metadata into a visible user folder to work around this boundary.
 
-Native builds require Go 1.27.3. The pinned Linux archive checksums in
+Native builds require Go 1.27.4. The pinned Linux archive checksums in
 `chameleon/ensure-go.sh` are from the official Go download manifest. The updated
 x/net module includes the HTTP/2 fixes; keep the existing isolated HTTP/2 flow
 patch and verify its exact upstream match when building Linux release binaries.

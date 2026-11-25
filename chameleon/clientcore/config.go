@@ -12,12 +12,13 @@ import (
 // Config holds the client configuration.
 type Config struct {
 	ServerAddress           string `json:"server_address"`
-	ServerDialAddress       string `json:"server_dial_address,omitempty"` // optional validated IP:port used only for the TCP dial
-	PSKKey                  string `json:"psk_key"`                       // hex-encoded PSK
-	TransportKey            string `json:"transport_key,omitempty"`       // routing/cover marker only, not session authentication
-	Protocol                string `json:"protocol"`                      // fixed to "http2"
-	DoHDomain               string `json:"doh_domain"`                    // Domain for DoH polling
-	DNSListenAddr           string `json:"dns_listen_addr"`               // Local DNS proxy address, e.g. "127.0.0.1:53"
+	ServerDialAddress       string `json:"server_dial_address,omitempty"`  // optional validated IP:port used only for the TCP dial
+	ServerDialAddress6      string `json:"server_dial_address6,omitempty"` // optional public [IPv6]:port tried before ServerDialAddress
+	PSKKey                  string `json:"psk_key"`                        // hex-encoded PSK
+	TransportKey            string `json:"transport_key,omitempty"`        // routing/cover marker only, not session authentication
+	Protocol                string `json:"protocol"`                       // fixed to "http2"
+	DoHDomain               string `json:"doh_domain"`                     // Domain for DoH polling
+	DNSListenAddr           string `json:"dns_listen_addr"`                // Local DNS proxy address, e.g. "127.0.0.1:53"
 	BufferSize              int    `json:"buffer_size"`
 	ReconnectInterval       int    `json:"reconnect_interval"`        // seconds
 	FingerprintMode         string `json:"fingerprint_mode"`          // auto, mobile, or desktop

@@ -55,7 +55,8 @@ def trace():
     packets = [packet(True, 100, syn=True), packet(False, 200, syn=True)]
     seq = {True:101, False:201}
     for client, data in rows:
-        packets.append(packet(client, seq[client], data)); seq[client] += len(data)
+        packets.append(packet(client, seq[client], data))
+        seq[client] += len(data)
     keys = [f"{label} {random.hex()} {value.hex()}" for label,value in values.items()]
     return packets, keys
 
@@ -64,9 +65,12 @@ def trace():
 def test_automatic_tls13_h2_matching_and_recovery(observer, when):
     value, now = observer
     packets, keys = trace()
-    if when == "before": value.upload(value.device,value.lease,0,keys)
-    for raw in packets: value.packet(raw)
-    if when == "after": value.upload(value.device,value.lease,0,keys)
+    if when == "before":
+        value.upload(value.device,value.lease,0,keys)
+    for raw in packets:
+        value.packet(raw)
+    if when == "after":
+        value.upload(value.device,value.lease,0,keys)
     assert value.counts["headers_h2"] == 1
     assert keys[0].split()[2] not in json.dumps(value.status(value.device))
 
@@ -104,24 +108,28 @@ def test_negative_controls(observer, mode):
     if mode != "missing":
         rows = [f"{row.split()[0]} {row.split()[1] if mode=='wrong' else os.urandom(32).hex()} {os.urandom(32).hex()}" for row in keys]
         value.upload(value.device,value.lease,0,rows)
-    for raw in packets:value.packet(raw)
+    for raw in packets:
+        value.packet(raw)
     assert value.counts["headers_h2"] == 0
 
 
 def test_batch_atomic_on_malformed_and_conflict(observer):
     value,_ = observer
     good = line()
-    with pytest.raises(Rejected):value.upload(value.device,value.lease,0,[good,"invalid"])
+    with pytest.raises(Rejected):
+        value.upload(value.device,value.lease,0,[good,"invalid"])
     assert not value.keys and value.sequence == -1
     value.upload(value.device,value.lease,0,[good])
-    with pytest.raises(Rejected):value.upload(value.device,value.lease,1,[line(),good[:-64]+os.urandom(32).hex()])
+    with pytest.raises(Rejected):
+        value.upload(value.device,value.lease,1,[line(),good[:-64]+os.urandom(32).hex()])
     assert len(value.keys)==1 and value.sequence==0
 
 
 def test_conflicting_duplicates_in_one_batch_are_atomic(observer):
     value,_=observer
     good=line()
-    with pytest.raises(Rejected):value.upload(value.device,value.lease,0,[good,good[:-64]+os.urandom(32).hex()])
+    with pytest.raises(Rejected):
+        value.upload(value.device,value.lease,0,[good,good[:-64]+os.urandom(32).hex()])
     assert not value.keys and value.sequence==-1
 
 
@@ -130,32 +138,41 @@ def test_replay_is_idempotent_but_modified_sequence_denied(observer):
     rows=[line()]
     assert not value.upload(value.device,value.lease,0,rows)["duplicate"]
     assert value.upload(value.device,value.lease,0,rows)["duplicate"]
-    with pytest.raises(Rejected):value.upload(value.device,value.lease,0,[line()])
+    with pytest.raises(Rejected):
+        value.upload(value.device,value.lease,0,[line()])
 
 
 def test_device_scope_and_expiry_clear_flows_and_keys(observer):
     value,now=observer
-    with pytest.raises(Rejected):value.lease_for("other-device")
+    with pytest.raises(Rejected):
+        value.lease_for("other-device")
     packets,keys=trace()
     value.upload(value.device,value.lease,0,keys)
-    for raw in packets:value.packet(raw)
-    old=value.lease;now[0]=61;value.tick()
+    for raw in packets:
+        value.packet(raw)
+    old=value.lease
+    now[0]=61
+    value.tick()
     assert not value.keys and not value.flows
-    with pytest.raises(Rejected):value.upload(value.device,old,1,keys)
+    with pytest.raises(Rejected):
+        value.upload(value.device,old,1,keys)
     assert value.lease_for(value.device)["lease"] != old
 
 
 def test_continuous_authenticated_renewal_does_not_reset_flow(observer):
     value,now=observer
-    old=value.lease;now[0]=40
+    old=value.lease
+    now[0]=40
     assert value.lease_for(value.device)["lease"]==old
-    now[0]=70;value.tick()
+    now[0]=70
+    value.tick()
     assert value.lease==old
 
 
 def test_capacity_is_bounded_and_loss_revokes_generation(observer):
     value,_=observer
-    for seq in range(12):value.upload(value.device,value.lease,seq,[line() for _ in range(32)])
+    for seq in range(12):
+        value.upload(value.device,value.lease,seq,[line() for _ in range(32)])
     assert len(value.keys)==value.MAX_KEYS
     value.loss(1)
     assert not value.keys and value.lease is None
@@ -163,7 +180,8 @@ def test_capacity_is_bounded_and_loss_revokes_generation(observer):
 
 def test_out_of_scope_packets_never_open_flow(observer):
     value,_=observer
-    raw=bytearray(packet(True,1,syn=True));raw[16:20]=socket.inet_aton("192.0.2.3")
+    raw=bytearray(packet(True,1,syn=True))
+    raw[16:20]=socket.inet_aton("192.0.2.3")
     value.packet(bytes(raw))
     assert not value.flows
 
@@ -214,7 +232,8 @@ def test_flow_stage_diagnostics_distinguish_session_match_from_authentication(mo
 
 def test_diagnostic_capture_scope_is_explicitly_incomplete(observer):
     value, _ = observer
-    raw = bytearray(packet(True, 1, syn=True));raw[16:20] = socket.inet_aton("192.0.2.3")
+    raw = bytearray(packet(True, 1, syn=True))
+    raw[16:20] = socket.inet_aton("192.0.2.3")
     value.packet(bytes(raw))
     assert value.counts["packets_outside_scope"] == 1
     assert not value.flows
@@ -270,7 +289,8 @@ def test_remaining_keys_not_submitted_after_retry_closes_flow(observer, monkeypa
 def test_secret_diagnostics_do_not_reflect_input(observer):
     value,_=observer
     private=os.urandom(32).hex()
-    with pytest.raises(Rejected) as error:value.upload(value.device,value.lease,0,[private])
+    with pytest.raises(Rejected) as error:
+        value.upload(value.device,value.lease,0,[private])
     assert private not in str(error.value)
 
 
@@ -297,26 +317,37 @@ def quic_trace():
     log=io.StringIO()
     cfg=QuicConfiguration(is_client=True,server_name="example.test",alpn_protocols=["h3"],secrets_log_file=log)
     cfg.cadata=cert.public_bytes(serialization.Encoding.PEM)
-    client=QuicConnection(configuration=cfg); hc=H3Connection(client)
+    client=QuicConnection(configuration=cfg)
+    hc=H3Connection(client)
     client.connect(("192.0.2.2",443),now=0)
     first=client.datagrams_to_send(now=0)
     header=pull_quic_header(Buffer(data=first[0][0]),host_cid_length=8)
-    sc=QuicConfiguration(is_client=False,alpn_protocols=["h3"]);sc.certificate,sc.private_key=cert,key
+    sc=QuicConfiguration(is_client=False,alpn_protocols=["h3"])
+    sc.certificate,sc.private_key=cert,key
     server=QuicConnection(configuration=sc,original_destination_connection_id=header.destination_cid)
-    hs=H3Connection(server);wire=[];queue=[(True,data) for data,_ in first];tick=[0.]
+    hs=H3Connection(server)
+    wire=[]
+    queue=[(True,data) for data,_ in first]
+    tick=[0.]
     def exchange():
         for _ in range(200):
             tick[0]+=.01
             for endpoint,outgoing in ((client,True),(server,False)):
-                if endpoint is server and not wire:continue
+                if endpoint is server and not wire:
+                    continue
                 timer=endpoint.get_timer()
-                if timer is not None and timer<=tick[0]:endpoint.handle_timer(now=tick[0])
+                if timer is not None and timer<=tick[0]:
+                    endpoint.handle_timer(now=tick[0])
                 queue.extend((outgoing,data) for data,_ in endpoint.datagrams_to_send(now=tick[0]))
-            if not queue:continue
-            outgoing,data=queue.pop(0);wire.append((outgoing,data))
-            receiver=server if outgoing else client;h3=hs if outgoing else hc
+            if not queue:
+                continue
+            outgoing,data=queue.pop(0)
+            wire.append((outgoing,data))
+            receiver=server if outgoing else client
+            h3=hs if outgoing else hc
             receiver.receive_datagram(data,("192.0.2.1",50000) if outgoing else ("192.0.2.2",443),now=tick[0])
-            while (event:=receiver.next_event()) is not None:h3.handle_event(event)
+            while (event:=receiver.next_event()) is not None:
+                h3.handle_event(event)
     exchange()
     hc.send_headers(0,[(b":method",b"GET"),(b":scheme",b"https"),(b":authority",b"example.test"),(b":path",b"/owned-test")],end_stream=True)
     exchange()
@@ -333,8 +364,12 @@ def quic_trace():
 def test_real_quic_handshake_and_h3_in_automatic_observer(observer,mode):
     value,_=observer
     packets,keys=quic_trace()
-    if mode=="wrong":keys=[row[:-64]+os.urandom(32).hex() for row in keys]
-    if mode not in ("missing","after"):value.upload(value.device,value.lease,0,keys)
-    for raw in packets:value.packet(raw)
-    if mode=="after":value.upload(value.device,value.lease,0,keys)
+    if mode=="wrong":
+        keys=[row[:-64]+os.urandom(32).hex() for row in keys]
+    if mode not in ("missing","after"):
+        value.upload(value.device,value.lease,0,keys)
+    for raw in packets:
+        value.packet(raw)
+    if mode=="after":
+        value.upload(value.device,value.lease,0,keys)
     assert value.counts["headers_h3"]==(1 if mode in ("before","after") else 0)

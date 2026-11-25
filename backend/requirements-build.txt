@@ -1,6 +1,6 @@
 # Release-builder toolchain. Keep exact versions and regenerate the hashed lock
 # deliberately; release scripts must never resolve "latest" while signing code.
 pip==26.2.1
-setuptools==83.0.0
+setuptools==84.1.0
 wheel==0.46.2
 pyinstaller==6.16.0

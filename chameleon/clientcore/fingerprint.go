@@ -286,11 +286,9 @@ func CreateTLSTransport(profile FingerprintProfile, serverAddr string, serverDia
 	tracker := newConnectionTracker()
 	transport := &http.Transport{
 		DialTLS: func(network, addr string) (net.Conn, error) {
-			dialAddr := addr
-			if serverDialAddr != "" {
-				dialAddr = serverDialAddr
-			}
-			conn, err := dialUTLS(dialAddr, profile, nil, nil, shieldDomain, tlsCertSHA256, verifyServerCertificate)
+			conn, err := dialFirstReachable(dialCandidates(serverDialAddr, addr), func(dialAddr string, timeout time.Duration) (net.Conn, error) {
+				return dialUTLS(dialAddr, timeout, profile, nil, nil, shieldDomain, tlsCertSHA256, verifyServerCertificate)
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -335,11 +333,9 @@ func createRealityHTTP2Transport(profile FingerprintProfile, serverDialAddr stri
 	}
 	t.ConnPool = nil
 	t.DialTLSContext = func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-		dialAddr := addr
-		if serverDialAddr != "" {
-			dialAddr = serverDialAddr
-		}
-		conn, err := dialUTLS(dialAddr, profile, realityPub, psk, shieldDomain, tlsCertSHA256, verifyServerCertificate)
+		conn, err := dialFirstReachable(dialCandidates(serverDialAddr, addr), func(dialAddr string, timeout time.Duration) (net.Conn, error) {
+			return dialUTLS(dialAddr, timeout, profile, realityPub, psk, shieldDomain, tlsCertSHA256, verifyServerCertificate)
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -362,10 +358,19 @@ func createRealityHTTP2Transport(profile FingerprintProfile, serverDialAddr stri
 // dialUTLS opens a TCP connection and performs a uTLS handshake.
 // If realityKey is non-nil the REALITY visibility marker is embedded in the SessionID.
 // nextProtos is always ["h2", "http/1.1"] unless overridden.
-func dialUTLS(addr string, profile FingerprintProfile, realityPub, psk []byte, shieldDomain string, tlsCertSHA256 []byte, verifyServerCertificate ...bool) (net.Conn, error) {
-	tcpConn, err := profileDialer(profile).Dial("tcp", addr)
+func dialUTLS(addr string, timeout time.Duration, profile FingerprintProfile, realityPub, psk []byte, shieldDomain string, tlsCertSHA256 []byte, verifyServerCertificate ...bool) (net.Conn, error) {
+	dialer := profileDialer(profile)
+	if timeout > 0 {
+		dialer.Timeout = timeout
+	}
+	tcpConn, err := dialer.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
+	}
+	if timeout > 0 {
+		// The handshake of a preferred endpoint is bounded too, so a path that
+		// accepts TCP but stalls falls back to the next endpoint quickly.
+		_ = tcpConn.SetDeadline(time.Now().Add(2 * timeout))
 	}
 
 	sni := normalizeServerName(shieldDomain)
@@ -445,6 +450,9 @@ func dialUTLS(addr string, profile FingerprintProfile, realityPub, psk []byte, s
 			tcpConn.Close()
 			return nil, err
 		}
+	}
+	if timeout > 0 {
+		_ = tcpConn.SetDeadline(time.Time{})
 	}
 
 	if len(realityPub) > 0 {

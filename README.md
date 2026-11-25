@@ -18,13 +18,14 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img alt="Version 1.1.5" src="https://img.shields.io/badge/version-1.1.5-FF6B35?style=for-the-badge" /></a>
+  <a href="VERSION"><img alt="Version 1.1.6" src="https://img.shields.io/badge/version-1.1.6-FF6B35?style=for-the-badge" /></a>
   <a href="#supported-platform"><img alt="Raspberry Pi OS Trixie" src="https://img.shields.io/badge/Raspberry%20Pi%20OS-Trixie-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" /></a>
   <a href="#project-status"><img alt="Active development" src="https://img.shields.io/badge/status-active%20development-F59E0B?style=for-the-badge" /></a>
   <a href="LICENSE"><img alt="Source available license" src="https://img.shields.io/badge/license-source%20available-334155?style=for-the-badge" /></a>
 </p>
 
 <p align="center">
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#features">Features</a> ·
   <a href="#deployment">Deployment</a> ·
   <a href="#security">Security</a> ·
@@ -50,13 +51,21 @@
 
 EasyPi is not automatically in the path of every packet. DNS enforcement requires clients to use the EasyPi resolver. Gateway, per-device routing, kill-switch, and admission policies require the relevant traffic to traverse the Pi.
 
+<a id="screenshots"></a>
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/dashboard.png" width="100%" alt="EasyPi dashboard: network protection status, gateway mode, system resources and quick navigation" />
+</p>
+
 <a id="project-status"></a>
 
 ## 📌 Project status
 
 | | Current state |
 |---|---|
-| **Version** | [`1.1.5`](VERSION) |
+| **Version** | [`1.1.6`](VERSION) |
 | **Official binary target** | Raspberry Pi OS Lite 64-bit · Debian Trixie · `aarch64` |
 | **Development** | Active; behavior can vary with hardware, upstream routing, IPv6, and third-party services |
 | **Binary installation** | The signed-install contract exists, but the independent bootstrap/key distribution channel is not yet complete |
@@ -299,8 +308,6 @@ The Setup page accepts a local release archive or HTTPS URL together with a mand
 
 The repository-root `update.sh` is a compatibility entry point for the same hardened updater. It translates the legacy command-line options and delegates signature verification, snapshotting, health checks, reboot recovery, and rollback to `scripts/maintenance/apply_update.sh`; it refuses custom installation targets. The explicit `--skip-restart` option only stages verified files and therefore intentionally skips the restart/health gate.
 
-Production releases can also be deployed manually through the Tailscale-only GitHub Actions workflow documented in [`docs/CI_CD_DEPLOYMENT.md`](docs/CI_CD_DEPLOYMENT.md). It deploys an existing signed release, uses strict SSH host-key verification, and relies on the same health-gated updater and rollback path. It never stores or uses the private release signing key.
-
 For PostgreSQL, the updater also takes a database dump before applying the release and restores it during rollback. These internal dumps are stored with root-only access in the update snapshot directory; they are not encrypted `.epibak` exports. Keep a separately stored encrypted backup for recovery.
 
 </details>
@@ -483,6 +490,6 @@ EasyPi is **source available**, not OSI open source. The [EasyPi Source Availabl
 Contributions are welcome through [GitHub Issues and pull requests](https://github.com/NewNetGuard/EasyPi). You may fork the repository on GitHub and publish source code changes in your fork for non-commercial purposes, provided the fork keeps the license and all notices and is not presented as an official release. Forks may contain source code only: built binaries, installers, release archives, and container images may not be distributed, including through a fork's releases. These permissions do not grant commercial deployment or general redistribution rights. Personal household use and private builds signed with your own key are permitted. See [LICENSE](LICENSE) for the complete terms.
 
 <p align="center">
-  <sub>EasyPi v1.1.5 · Raspberry Pi OS Trixie · Active development</sub><br />
+  <sub>EasyPi v1.1.6 · Raspberry Pi OS Trixie · Active development</sub><br />
   <a href="#top">Back to top</a>
 </p>

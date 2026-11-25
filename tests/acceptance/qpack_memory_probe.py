@@ -25,21 +25,32 @@ class Mallinfo(ctypes.Structure):
 
 def prefix(value,bits,mask=0):
     maximum=(1<<bits)-1
-    if value<maximum:return bytes([mask|value])
-    out=bytearray([mask|maximum]);value-=maximum
-    while value>=128:out.append((value&127)|128);value>>=7
-    out.append(value);return bytes(out)
+    if value<maximum:
+        return bytes([mask|value])
+    out=bytearray([mask|maximum])
+    value-=maximum
+    while value>=128:
+        out.append((value&127)|128)
+        value>>=7
+    out.append(value)
+    return bytes(out)
 
 
 def run(count):
-    libc=ctypes.CDLL(None);libc.mallinfo2.restype=Mallinfo
+    libc=ctypes.CDLL(None)
+    libc.mallinfo2.restype=Mallinfo
     def malloc_used():
-        m=libc.mallinfo2();return m.uordblks+m.hblkhd
+        m=libc.mallinfo2()
+        return m.uordblks+m.hblkhd
     def rss():
         return int(Path('/proc/self/statm').read_text().split()[1])*resource.getpagesize()
-    gc.collect();tracemalloc.start();before_malloc=malloc_used();before_rss=rss()
+    gc.collect()
+    tracemalloc.start()
+    before_malloc=malloc_used()
+    before_rss=rss()
     pairs=[(Guard(capacity=65536),pylsqpack.Decoder(65536,0)) for _ in range(count)]
-    max_malloc=malloc_used();max_rss=rss()
+    max_malloc=malloc_used()
+    max_rss=rss()
     huffman=HuffmanEncoder(REQUEST_CODES,REQUEST_CODES_LENGTH)
     value=huffman.encode(b'x'*10000)
     large=b'\xc0'+prefix(len(value),7,128)+value
@@ -55,11 +66,13 @@ def run(count):
             native.feed_encoder(guard.feed_encoder(large))
         for _ in range(32):
             native.feed_encoder(guard.feed_encoder(wide))
-        max_malloc=max(max_malloc,malloc_used());max_rss=max(max_rss,rss())
+        max_malloc=max(max_malloc,malloc_used())
+        max_rss=max(max_rss,rss())
     # Refill simultaneously resident tables with maximum entry counts.
     for guard,native in pairs:
         native.feed_encoder(guard.feed_encoder(b'\x40\x00'*2048))
-    max_malloc=max(max_malloc,malloc_used());max_rss=max(max_rss,rss())
+    max_malloc=max(max_malloc,malloc_used())
+    max_rss=max(max_rss,rss())
     # Exercise decoding at the unchanged field-section byte limit while all
     # tables remain resident. Bridge processes one header block at a time.
     block=b'\x00\x00\x50'+prefix(16340,7)+b'x'*16340
@@ -67,7 +80,8 @@ def run(count):
         assert guard.check(block)
         _,headers=native.feed_header(0,block)
         assert len(headers[0][1])==16340
-        max_malloc=max(max_malloc,malloc_used());max_rss=max(max_rss,rss())
+        max_malloc=max(max_malloc,malloc_used())
+        max_rss=max(max_rss,rss())
         del headers
     current,peak=tracemalloc.get_traced_memory()
     result={'connections':count,'pylsqpack':importlib.metadata.version('pylsqpack'),

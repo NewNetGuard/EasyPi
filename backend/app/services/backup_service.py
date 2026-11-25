@@ -36,6 +36,9 @@ BACKUP_IMPORT_DIR = ROOT_DIR / "data" / "backup-archive-imports"
 RECOVERY_PACKAGE_SUFFIX = ".epikey"
 RESTORE_STATUS_FILE = Path("/var/lib/easypi/restore-status/latest.json")
 RESTORE_RESULT_STATUSES = {"running", "success", "failed-rolled-back", "failed"}
+# Archives, restore status and recovery exports are written by the root-owned
+# runner; on Linux the backend trusts only files owned by this uid.
+TRUSTED_OWNER_UID = 0
 BACKUP_ARCHIVE_NAME_RE = re.compile(
     r"^(?:config|full|pre-restore)-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}"
     r"(?:-\d{2})?\.(?:epibak|tar\.gz)$"
@@ -194,9 +197,9 @@ class BackupService:
             or (
                 os.name == "posix"
                 and (
-                    root_details.st_uid != 0
+                    root_details.st_uid != TRUSTED_OWNER_UID
                     or root_details.st_mode & 0o022
-                    or details.st_uid != 0
+                    or details.st_uid != TRUSTED_OWNER_UID
                     or details.st_mode & 0o022
                 )
             )
@@ -348,7 +351,7 @@ class BackupService:
                 or details.st_size > 4096
                 or (
                     os.name == "posix"
-                    and (details.st_uid != 0 or details.st_mode & 0o022)
+                    and (details.st_uid != TRUSTED_OWNER_UID or details.st_mode & 0o022)
                 )
             ):
                 raise ValueError("unsafe restore status file")
@@ -826,7 +829,7 @@ class BackupService:
                 resolved.parent != export_root
                 or candidate.is_symlink()
                 or not stat.S_ISREG(details.st_mode)
-                or (os.name == "posix" and details.st_uid != 0)
+                or (os.name == "posix" and details.st_uid != TRUSTED_OWNER_UID)
                 or (os.name == "posix" and stat.S_IMODE(details.st_mode) != 0o640)
             ):
                 raise HTTPException(

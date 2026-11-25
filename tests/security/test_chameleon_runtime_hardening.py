@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import signal
 import shutil
 import stat
@@ -22,11 +23,14 @@ def test_ensure_go_accepts_the_exact_pinned_toolchain(tmp_path: Path) -> None:
     if not bash:
         pytest.skip("bash is unavailable")
 
+    ensure_go = (ROOT / "chameleon/ensure-go.sh").read_text(encoding="utf-8")
+    pinned = re.search(r"^PINNED_GO_VERSION=([0-9.]+)$", ensure_go, re.MULTILINE)
+    assert pinned, "ensure-go.sh must declare PINNED_GO_VERSION"
     fake_go = tmp_path / "fake-go"
     fake_go.write_text(
         "#!/usr/bin/env bash\n"
         "[[ ${1:-} == version ]] || exit 2\n"
-        "printf '%s\\n' 'go version go1.25.13 linux/amd64'\n",
+        f"printf '%s\\n' 'go version go{pinned.group(1)} linux/amd64'\n",
         encoding="utf-8",
     )
     fake_go.chmod(fake_go.stat().st_mode | stat.S_IXUSR)

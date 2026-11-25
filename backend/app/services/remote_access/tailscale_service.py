@@ -40,6 +40,10 @@ from ..remote_access.tailscale_config import TailscaleConfig, get_tailscale_conf
 
 logger = logging.getLogger(__name__)
 
+# The Taildrop importer runs as root; its status file is trusted only when
+# owned by this uid.
+TRUSTED_OWNER_UID = 0
+
 @dataclass
 class TailscaleStatus:
     """Current status of Tailscale remote access."""
@@ -113,7 +117,7 @@ class TailscaleRemoteAccessService:
                 return {}
             if details.st_size > 4096 or (
                 os.name == "posix"
-                and (details.st_uid != 0 or details.st_mode & 0o022)
+                and (details.st_uid != TRUSTED_OWNER_UID or details.st_mode & 0o022)
             ):
                 return {}
             payload = json.loads(status_path.read_text(encoding="utf-8"))

@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import dns.message
 import dns.name
@@ -50,6 +50,8 @@ from .chronicle.flow_log import (
 from .chronicle.metrics import NetProtectionMetrics
 from .healthcheck import is_internal_resolver_healthcheck
 from .stealth_dns_policy import NEED_MAC, ORDINARY, PROTECTED, StealthDNSPolicy
+from .profiles.mobile_tunnel import MobileTunnelPeers, is_mobile_tunnel_address
+from .mobile_verdict import MobileVerdictListener
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +95,13 @@ class ServerState(Enum):
     RUNNING = "running"
     STOPPING = "stopping"
     FAILED = "failed"
+
+
+class QueryOutcome(NamedTuple):
+    """Wire response plus how it was decided (None: no policy decision)."""
+
+    response: bytes | None
+    status: FlowStatus | None
 
 
 @dataclass
@@ -320,6 +329,8 @@ class NetProtectionServer:
     _stealth_dns_policy: StealthDNSPolicy = field(default_factory=StealthDNSPolicy)
     _mac_cache_ttl_sec: float = 120.0
     _mac_negative_cache_ttl_sec: float = 2.0
+    _mobile_tunnel_peers: MobileTunnelPeers | None = None
+    _mobile_verdict: MobileVerdictListener | None = None
     _active_queries: int = 0
     _active_connections: int = 0
     _active_queries_by_source: dict[str, int] = field(default_factory=dict)
@@ -339,7 +350,8 @@ class NetProtectionServer:
             # Запуск слушателей
             await self._start_listeners()
             await self._start_encrypted_listeners()
-            
+            await self._start_mobile_verdict_listener()
+
             # Запуск Guardian
             if self.guardian:
                 await self.guardian.start()
@@ -436,6 +448,15 @@ class NetProtectionServer:
         client_addr: tuple[str, int],
         protocol: str,
     ) -> bytes | None:
+        outcome = await self.handle_dns_query_outcome(data, client_addr, protocol)
+        return outcome.response
+
+    async def handle_dns_query_outcome(
+        self,
+        data: bytes,
+        client_addr: tuple[str, int],
+        protocol: str,
+    ) -> QueryOutcome:
         client_ip = client_addr[0]
         source_active = self._active_queries_by_source.get(client_ip, 0)
         if (
@@ -443,7 +464,7 @@ class NetProtectionServer:
             or source_active >= self._listener_limit("max_client_queries", 64)
         ):
             self._record_overload_drop(f"{protocol}-query")
-            return self._make_error_response(data, dns.rcode.SERVFAIL)
+            return QueryOutcome(self._make_error_response(data, dns.rcode.SERVFAIL), None)
         self._active_queries += 1
         self._active_queries_by_source[client_ip] = source_active + 1
         try:
@@ -461,7 +482,7 @@ class NetProtectionServer:
         data: bytes,
         client_addr: tuple[str, int],
         protocol: str,
-    ) -> bytes | None:
+    ) -> QueryOutcome:
         """
         Обработка DNS-запроса.
         
@@ -484,12 +505,12 @@ class NetProtectionServer:
                 self._update_protocol_stats(protocol)
                 logger.warning(f"[{flow_id}] Invalid DNS query from {client_ip}: {e}")
                 self.stats.errors += 1
-                return self._make_error_response(data, dns.rcode.FORMERR)
+                return QueryOutcome(self._make_error_response(data, dns.rcode.FORMERR), None)
             
             if not query.question:
                 self.stats.total_queries += 1
                 self._update_protocol_stats(protocol)
-                return self._make_error_response(data, dns.rcode.FORMERR)
+                return QueryOutcome(self._make_error_response(data, dns.rcode.FORMERR), None)
             
             question = query.question[0]
             domain = str(question.name).rstrip(".")
@@ -504,8 +525,8 @@ class NetProtectionServer:
             if is_internal_resolver_healthcheck(client_ip, domain):
                 response_data = await self._direct_upstream_query(data, client_ip)
                 if response_data:
-                    return response_data
-                return self._make_error_response(data, dns.rcode.SERVFAIL)
+                    return QueryOutcome(response_data, None)
+                return QueryOutcome(self._make_error_response(data, dns.rcode.SERVFAIL), None)
 
             self.stats.total_queries += 1
             self._update_protocol_stats(protocol)
@@ -515,9 +536,9 @@ class NetProtectionServer:
                 response_data = await self._direct_upstream_query(data, client_ip)
                 if response_data:
                     self.stats.allowed_queries += 1
-                    return response_data
+                    return QueryOutcome(response_data, FlowStatus.UPSTREAM)
                 self.stats.errors += 1
-                return self._make_error_response(data, dns.rcode.SERVFAIL)
+                return QueryOutcome(self._make_error_response(data, dns.rcode.SERVFAIL), None)
             
             # 2. Получаем verdict
             verdict = await self._get_verdict(domain, client_ip, qtype_str, flow_id)
@@ -531,7 +552,7 @@ class NetProtectionServer:
                     flow_id, domain, qtype_str, client_ip, protocol,
                     FlowStatus.BLOCKED, verdict, start_time,
                 )
-                return self._make_blocked_response(query, verdict)
+                return QueryOutcome(self._make_blocked_response(query, verdict), FlowStatus.BLOCKED)
             
             # 3.5 Если REDIRECT - возвращаем rewrite ответ
             if action == VerdictAction.REDIRECT or action == VerdictType.REDIRECT:
@@ -540,7 +561,7 @@ class NetProtectionServer:
                     flow_id, domain, qtype_str, client_ip, protocol,
                     FlowStatus.REDIRECTED, verdict, start_time,
                 )
-                return await self._make_redirect_response(query, verdict, client_ip)
+                return QueryOutcome(await self._make_redirect_response(query, verdict, client_ip), FlowStatus.REDIRECTED)
             
             # 4. ALLOW - пробрасываем сырой ответ от upstream
             self.stats.allowed_queries += 1
@@ -563,24 +584,24 @@ class NetProtectionServer:
                         flow_id, domain, qtype_str, client_ip, protocol,
                         FlowStatus.BLOCKED, post_verdict, start_time,
                     )
-                    return self._make_blocked_response(query, post_verdict)
+                    return QueryOutcome(self._make_blocked_response(query, post_verdict), FlowStatus.BLOCKED)
 
                 await self._log_flow(
                     flow_id, domain, qtype_str, client_ip, protocol,
                     FlowStatus.UPSTREAM, verdict, start_time, response_ips=resolved_ips,
                 )
-                return response_data
+                return QueryOutcome(response_data, FlowStatus.UPSTREAM)
             else:
                 await self._log_flow(
                     flow_id, domain, qtype_str, client_ip, protocol,
                     FlowStatus.FAILED, verdict, start_time,
                 )
-                return self._make_error_response(data, dns.rcode.SERVFAIL)
+                return QueryOutcome(self._make_error_response(data, dns.rcode.SERVFAIL), FlowStatus.FAILED)
         
         except Exception as e:
             logger.error(f"[{flow_id}] Error handling query: {e}", exc_info=True)
             self.stats.errors += 1
-            return self._make_error_response(data, dns.rcode.SERVFAIL)
+            return QueryOutcome(self._make_error_response(data, dns.rcode.SERVFAIL), None)
     
     async def _direct_upstream_query(
         self, data: bytes, client_ip: str = "127.0.0.1"
@@ -811,7 +832,11 @@ class NetProtectionServer:
             await self._doh_runner.cleanup()
             self._doh_runner = None
             self._doh_site = None
-    
+
+        if self._mobile_verdict:
+            await self._mobile_verdict.stop()
+            self._mobile_verdict = None
+
     async def _shutdown_components(self) -> None:
         """Завершение работы компонентов."""
         if self.flow_logger:
@@ -1242,6 +1267,56 @@ class NetProtectionServer:
         except Exception:
             return None
 
+    def _tunnel_peers(self) -> MobileTunnelPeers:
+        if self._mobile_tunnel_peers is None:
+            from .config import get_settings
+
+            self._mobile_tunnel_peers = MobileTunnelPeers(
+                get_settings().NETPROTECTION_DATA_DIR
+            )
+        return self._mobile_tunnel_peers
+
+    async def resolve_mobile_verdict(
+        self, domain: str, client_ip: str
+    ) -> tuple[bool, str] | None:
+        """Decide a domain for an enrolled phone filtering on its own.
+
+        The question runs through the same path as the phone's DNS queries
+        inside the home tunnel (verdict, rewrites, post-resolution checks,
+        Query Log), so every NetProtection policy applies. Returns None for an
+        address that is not an enrolled home-tunnel phone.
+        """
+        if not is_mobile_tunnel_address(client_ip):
+            return None
+        if self._tunnel_peers().mac_for(client_ip) is None:
+            return None
+        query = dns.message.make_query(domain, dns.rdatatype.A)
+        outcome = await self.handle_dns_query_outcome(
+            query.to_wire(), (client_ip, 0), "mobile"
+        )
+        if outcome.status is None:
+            # Overload, malformed input or an internal error: no decision.
+            raise RuntimeError("NetProtection could not decide this query")
+        # An allowed name whose upstream lookup failed is still allowed; the
+        # phone resolves it itself.
+        return outcome.status == FlowStatus.BLOCKED, outcome.status.value
+
+    async def _start_mobile_verdict_listener(self) -> None:
+        """Serve on-phone PRISM decisions to the local EasyPi backend."""
+        from .config import get_settings
+
+        listener = MobileVerdictListener(
+            get_settings().NETPROTECTION_DATA_DIR, self.resolve_mobile_verdict
+        )
+        try:
+            await listener.start()
+        except Exception as e:
+            # DNS service must not depend on this optional channel; the
+            # backend falls back to its reduced policy check without it.
+            logger.warning(f"Mobile verdict socket unavailable: {e}")
+            return
+        self._mobile_verdict = listener
+
     async def _resolve_client_mac(
         self, client_ip: str, *, fresh: bool = False
     ) -> str | None:
@@ -1254,6 +1329,12 @@ class NetProtectionServer:
             return None
         if not re.match(r"^([0-9]{1,3}\.){3}[0-9]{1,3}$", client_ip):
             return None
+
+        # Home-tunnel phones have no neighbour entry: their identity is the
+        # pseudo-MAC of the live peer registry. Not cached here, so removing a
+        # phone from the registry takes effect on its next query.
+        if is_mobile_tunnel_address(client_ip):
+            return self._tunnel_peers().mac_for(client_ip)
 
         now_ts = time.monotonic()
         cached = self._client_mac_cache.get(client_ip)

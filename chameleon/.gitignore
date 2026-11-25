@@ -1,4 +1,4 @@
-# Build artifacts — rebuild with ./build.sh (needs Go 1.27.3).
+# Build artifacts — rebuild with ./build.sh (needs Go 1.27.4).
 /bin/
 # Build caches of a standalone checkout (toolchain, patched x/net).
 /.build/

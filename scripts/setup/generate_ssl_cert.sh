@@ -38,13 +38,21 @@ info "Generating self-signed SSL certificate..."
 # Get hostname and IP for certificate
 HOSTNAME=$(hostname -f 2>/dev/null || hostname)
 LOCAL_IP=$(hostname -I | awk '{print $1}')
+# X.509 limits the subject CN to 64 characters; a long FQDN stays in the SAN.
+COMMON_NAME="${HOSTNAME}"
+if (( ${#COMMON_NAME} > 64 )); then
+    COMMON_NAME="${HOSTNAME%%.*}"
+fi
+if (( ${#COMMON_NAME} > 64 )) || [[ -z "${COMMON_NAME}" ]]; then
+    COMMON_NAME="easypi"
+fi
 
 # Create certificate with SAN (Subject Alternative Names)
 openssl req -x509 -nodes -days ${DAYS_VALID} \
     -newkey rsa:2048 \
     -keyout "${KEY_FILE}" \
     -out "${CERT_FILE}" \
-    -subj "/CN=${HOSTNAME}/O=EasyPi/C=US" \
+    -subj "/CN=${COMMON_NAME}/O=EasyPi/C=US" \
     -addext "subjectAltName=DNS:${HOSTNAME},DNS:easypi.local,DNS:localhost,IP:${LOCAL_IP},IP:127.0.0.1"
 
 # Set permissions

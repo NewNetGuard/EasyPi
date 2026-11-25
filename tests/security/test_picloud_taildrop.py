@@ -21,6 +21,19 @@ taildrop = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(taildrop)
 
 
+@pytest.fixture(autouse=True)
+def _trust_test_file_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The importer runs as root and trusts only root-owned state. Fixtures are
+    # created by the user running the tests, so trust that uid instead.
+    if hasattr(os, "geteuid"):
+        monkeypatch.setattr(taildrop, "ROOT_UID", os.geteuid())
+
+
+def test_importer_trusts_only_root_owned_state_by_default() -> None:
+    source = IMPORTER_PATH.read_text(encoding="utf-8")
+    assert "\nROOT_UID = 0\n" in source
+
+
 class FakeStream(io.BytesIO):
     def __init__(self, content: bytes, declared_size: int | None = None) -> None:
         super().__init__(content)

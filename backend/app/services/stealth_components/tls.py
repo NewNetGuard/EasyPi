@@ -114,8 +114,11 @@ class StealthTlsMixin:
             alphabet[int.from_bytes(digest[index : index + 2], "big") % len(alphabet)]
             for index in range(0, 16, 2)
         )
+        # IPv6 too: some mobile networks reach the VPS cleanly only over IPv6
+        # (its IPv4 transit into Telekom lost ~44% of the tunnel's data).
         return f"""server {{
     listen 0.0.0.0:443 ssl http2 default_server;
+    listen [::]:443 ssl http2 default_server;
     server_name _;
     server_tokens off;
 

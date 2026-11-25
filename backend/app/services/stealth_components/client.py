@@ -204,6 +204,8 @@ class StealthClientMixin:
                 "credential_protection": "",
                 "acme_terms_accepted": False,
                 "ip_shield_deployed": False,
+                # Learned from the VPS over SSH; phones dial it before IPv4.
+                "public_ipv6": "",
                 "domain": "",
                 "domain_tls_deployed": False,
                 "host_key_type": "",
@@ -432,9 +434,14 @@ class StealthClientMixin:
         dial_address = self._ip_shield_address(meta)
         if not dial_address:
             raise ValueError("Chameleon public address is not available")
+        # Learned over SSH from the VPS itself; phones try it before IPv4.
+        dial_address6 = self._parse_public_ipv6(
+            "inet6 " + str(meta.get("ssh", {}).get("public_ipv6") or "")
+        )
         return {
             "server_address": server_address,
             "server_dial_address": f"{dial_address}:{server_port}",
+            "server_dial_address6": f"[{dial_address6}]:{server_port}" if dial_address6 else "",
             "psk_key": hmac.new(bytes.fromhex(meta["client_auth_key"]), ("easypi/mobile-auth/v1/" + device_id).encode("ascii"), hashlib.sha256).hexdigest(),
             "transport_key": meta["psk_key"],
             "protocol": "http2",

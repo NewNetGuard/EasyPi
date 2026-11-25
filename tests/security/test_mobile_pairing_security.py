@@ -989,11 +989,13 @@ def test_prism_dns_uses_easypi_policy_and_mobile_auth(
         json={"domain": "ADS.Example.com.", "package_name": "com.example.app"},
     )
     assert blocked.status_code == 200
-    assert blocked.json() == {
+    body = blocked.json()
+    assert len(body.pop("policy_version")) == 16
+    assert body == {
         "domain": "ads.example.com",
         "blocked": True,
         "reason": "easypi_blocklist",
-        "cache_ttl_seconds": 300,
+        "cache_ttl_seconds": 60,
     }
     allowed = client.post(endpoint, headers=headers, json={"domain": "example.org"})
     assert allowed.status_code == 200
@@ -1240,6 +1242,7 @@ def test_mobile_chameleon_enrollment_assigns_an_independent_tunnel_address(
         "address": "10.10.0.3/32",
         "server_address": "vpn.example.test:443",
         "server_dial_address": "192.0.2.3:443",
+        "server_dial_address6": "",
         "psk_key": "11" * 32,
         "transport_key": "33" * 32,
         "protocol": "http2",
@@ -1694,6 +1697,66 @@ def test_home_profile_route_key_matches_the_relay_derivation(tmp_path) -> None:
         bytes([0x11] * 32), profile["psk_key"]
     )
     assert profile["prism_link_relay_route_key"] != profile["psk_key"]
+    assert profile["prism_link_direct_address"] == ""
+
+
+def _run_home_profile_snippet(tmp_path, listen: str, direct: str) -> dict:
+    import json
+    import re
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    script = Path("scripts/settings/mobile_link_agent.sh").read_text(encoding="utf-8")
+    body = script[script.index("home_profile() {") :]
+    snippet = re.search(r"<<'PY'\n(.*?)\nPY\n", body, re.S).group(1)
+    config = tmp_path / "server_config.json"
+    config.write_text(json.dumps({
+        "client_auth_key": "33" * 32, "psk_key": "44" * 32, "reality_public_key": "66" * 32,
+        "prism_link_listen": listen,
+    }), encoding="utf-8")
+    secret_file = tmp_path / "tunnel.secret"
+    secret_file.write_text("11" * 32, encoding="ascii")
+    result = subprocess.run(
+        [sys.executable, "-c", snippet, str(config), str(secret_file),
+         "eb4613c0-3146-47e9-878c-788c48a3713f", "10.77.0.3/32", "relay.example", "9446", direct],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr)
+    return json.loads(result.stdout)
+
+
+def test_home_profile_offers_the_direct_lan_path_when_listening_on_the_lan(tmp_path) -> None:
+    profile = _run_home_profile_snippet(tmp_path, "0.0.0.0:9083", "192.168.1.20:9083")
+
+    assert profile["prism_link_direct_address"] == "192.168.1.20:9083"
+
+
+def test_home_profile_hides_a_loopback_only_listener(tmp_path) -> None:
+    profile = _run_home_profile_snippet(tmp_path, "127.0.0.1:9083", "192.168.1.20:9083")
+
+    assert profile["prism_link_direct_address"] == ""
+
+
+def test_home_profile_rejects_a_public_direct_endpoint(tmp_path) -> None:
+    import pytest
+
+    with pytest.raises(RuntimeError, match="invalid direct endpoint"):
+        _run_home_profile_snippet(tmp_path, "0.0.0.0:9083", "203.0.113.5:9083")
+
+
+def test_home_tunnel_lan_listener_is_firewalled_to_the_home_subnet() -> None:
+    from pathlib import Path
+
+    script = Path("scripts/settings/mobile_link_agent.sh").read_text(encoding="utf-8")
+    assert 'PRISM_LINK_LISTEN="0.0.0.0:${PRISM_LINK_PORT}"' in script
+    assert (
+        'ufw allow in on "${lan[0]}" from "${lan[2]}" to any port "$PRISM_LINK_PORT" proto udp'
+        in script
+    )
+    # Tunnel and overlay interfaces are never treated as the home LAN.
+    assert "tailscale|easypi-mobile|wg|tun|cham|docker|br-|veth" in script
 
 
 def test_vps_mobile_registry_is_published_only_when_it_changes(tmp_path) -> None:

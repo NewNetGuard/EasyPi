@@ -4,10 +4,10 @@ pydantic-settings>=2.0.0
 tomli-w>=1.0.0
 
 # DNS processing
-dnspython>=2.4.0
+dnspython>=2.9.2
 
 # Async support
-aiohttp>=3.9.0
+aiohttp>=3.14.4
 aiofiles>=23.0.0
 httpx[http2]>=0.25.0
 cryptography>=41.0.0

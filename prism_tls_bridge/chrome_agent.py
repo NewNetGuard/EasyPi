@@ -6,7 +6,6 @@ from pathlib import Path
 import signal
 import socket
 import threading
-import time
 
 from .chrome import ChromeObserver, Rejected
 from .models import Endpoint

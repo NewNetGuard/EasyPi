@@ -48,7 +48,17 @@ generate_openssl_config() {
     local config_file="$1"
     local hostname=$(get_hostname)
     local ips=$(get_local_ips)
-    
+    # X.509 limits the subject CN to 64 characters, so a long FQDN would make
+    # openssl reject the request. The CN falls back to the first label; the
+    # full name stays in the SANs, which clients actually match against.
+    local common_name="$hostname"
+    if (( ${#common_name} > 64 )); then
+        common_name="${hostname%%.*}"
+    fi
+    if (( ${#common_name} > 64 )) || [[ -z "$common_name" ]]; then
+        common_name="easypi"
+    fi
+
     cat > "$config_file" << EOF
 [req]
 default_bits = ${CERT_BITS}
@@ -63,7 +73,7 @@ ST = Local
 L = Local
 O = EasyPi
 OU = Self-Signed
-CN = ${hostname}
+CN = ${common_name}
 
 [v3_req]
 basicConstraints = CA:FALSE

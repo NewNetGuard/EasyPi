@@ -22,6 +22,10 @@ SERVICE_USER="easypi-mobile-link"
 SERVICE_GROUP="easypi-mobile-link"
 LOCAL_ADDRESS="127.0.0.1:9445"
 TUNNEL_LOCAL_ADDRESS="127.0.0.1:9081"
+# PrismLink UDP. The relay agent reaches it on loopback; a phone on the home
+# network reaches it directly (firewall: home subnet only, never the router).
+PRISM_LINK_PORT=9083
+PRISM_LINK_LISTEN="0.0.0.0:${PRISM_LINK_PORT}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 EASYPI_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd -P)"
 NGINX_TEMPLATE="${EASYPI_ROOT}/templates/nginx/easypi-mobile-link.conf"
@@ -230,8 +234,47 @@ print(json.dumps({
 PY
 }
 
+# Prints "INTERFACE ADDRESS SUBNET" of the home network this EasyPi routes
+# through, or nothing when it has no private IPv4 LAN (relay path only).
+home_lan() {
+  /usr/bin/python3 - <<'PY'
+import ipaddress, re, subprocess
+def run(*args):
+    return subprocess.run(args, capture_output=True, text=True, timeout=5).stdout
+route = run("ip", "-4", "-o", "route", "get", "1.1.1.1").split()
+fields = {route[i]: route[i + 1] for i in range(len(route) - 1)}
+dev, src = fields.get("dev", ""), fields.get("src", "")
+if not re.fullmatch(r"[A-Za-z0-9_.-]{1,15}", dev) or re.match(r"(lo|tailscale|easypi-mobile|wg|tun|cham|docker|br-|veth)", dev):
+    raise SystemExit(0)
+try:
+    address = ipaddress.IPv4Address(src)
+except ValueError:
+    raise SystemExit(0)
+if not any(address in ipaddress.ip_network(net) for net in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")):
+    raise SystemExit(0)
+for item in run("ip", "-4", "-o", "addr", "show", "dev", dev).split("\n"):
+    parts = item.split()
+    if "inet" in parts:
+        interface = ipaddress.IPv4Interface(parts[parts.index("inet") + 1])
+        if interface.ip == address:
+            print(dev, address, interface.network)
+            break
+PY
+}
+
+# Admits PrismLink UDP from the home subnet only. Nothing is opened on the
+# router: away from home the phone still uses the relay.
+ensure_direct_firewall() {
+  local lan=() rule
+  command -v ufw >/dev/null 2>&1 || return 0
+  read -r -a lan < <(home_lan) || true
+  [[ ${#lan[@]} -eq 3 ]] || return 0
+  rule="EasyPi Protection direct ${lan[0]}"
+  ufw allow in on "${lan[0]}" from "${lan[2]}" to any port "$PRISM_LINK_PORT" proto udp comment "$rule" >/dev/null
+}
+
 ensure_home_server() {
-  local temporary
+  local temporary restart_home=false
   systemctl is-enabled --quiet "$SERVICE" || die "Enable Mobile Link before starting the home tunnel"
   [[ -s "$TUNNEL_CONFIG_FILE" && -s "$TUNNEL_SECRET_FILE" ]] || die "Configure the Mobile Link relay before starting the home tunnel"
   [[ -x "${EASYPI_ROOT}/bin/chameleon-server-home" ]] || die "home tunnel server binary is unavailable"
@@ -239,9 +282,9 @@ ensure_home_server() {
   install -d -o root -g "$SERVICE_GROUP" -m 0750 "$HOME_DIR"
   if [[ ! -s "$HOME_CONFIG" ]]; then
     temporary="$(mktemp "${HOME_DIR}/.home-server.XXXXXX")"
-    /usr/bin/python3 - "$temporary" "${EASYPI_ROOT}" <<'PY'
+    /usr/bin/python3 - "$temporary" "${EASYPI_ROOT}" "$PRISM_LINK_LISTEN" <<'PY'
 import json, os, secrets, sys
-path, root = sys.argv[1:]
+path, root, prism_listen = sys.argv[1:]
 payload = {
  "listen_address":"127.0.0.1", "listen_port":9081, "bootstrap_port":9082,
  "frontend_mode":"direct", "backend_address":"127.0.0.1:9081",
@@ -253,7 +296,7 @@ payload = {
  "domain":"", "upstream_dns":"127.0.0.1:53", "reality_public_key":secrets.token_hex(32),
  "shield_domain":"", "shield_preset":"ip", "probe_mode":"local", "probe_target":"127.0.0.1:9443",
  "block_quic_udp443":False, "quic_datagram_port":0, "tunnel_name":"easypi-mobile0", "tunnel_cidr":"10.77.0.1/24",
- "tunnel_mtu":1200, "prism_link_listen":"127.0.0.1:9083"
+ "tunnel_mtu":1200, "prism_link_listen":prism_listen
 }
 with open(path,"w",encoding="utf-8") as f:
  json.dump(payload,f,separators=(",",":")); f.write("\n"); f.flush(); os.fsync(f.fileno())
@@ -262,18 +305,26 @@ PY
   else
     [[ -f "$HOME_CONFIG" && ! -L "$HOME_CONFIG" ]] || die "home tunnel configuration path is unsafe"
     temporary="$(mktemp "${HOME_DIR}/.home-server-migrate.XXXXXX")"
-    /usr/bin/python3 - "$HOME_CONFIG" "$temporary" <<'PY'
+    /usr/bin/python3 - "$HOME_CONFIG" "$temporary" "$PRISM_LINK_LISTEN" <<'PY'
 import json, os, sys
 from pathlib import Path
-source, target = sys.argv[1:]
+source, target, prism_listen = sys.argv[1:]
 payload = json.loads(Path(source).read_text(encoding="utf-8"))
 payload["tunnel_mtu"] = 1200
-payload["prism_link_listen"] = "127.0.0.1:9083"
+payload["prism_link_listen"] = prism_listen
 with open(target,"w",encoding="utf-8") as f:
  json.dump(payload,f,separators=(",",":")); f.write("\n"); f.flush(); os.fsync(f.fileno())
 PY
-    chown root:"$SERVICE_GROUP" "$temporary"; chmod 0440 "$temporary"; mv -f -- "$temporary" "$HOME_CONFIG"
+    chown root:"$SERVICE_GROUP" "$temporary"; chmod 0440 "$temporary"
+    if cmp -s -- "$temporary" "$HOME_CONFIG"; then
+      rm -f -- "$temporary"
+    else
+      # A running server keeps its old listener until it restarts.
+      mv -f -- "$temporary" "$HOME_CONFIG"
+      restart_home=true
+    fi
   fi
+  ensure_direct_firewall
   [[ -f "$TUNNEL_CONFIG_FILE" && ! -L "$TUNNEL_CONFIG_FILE" ]] || die "home tunnel relay configuration path is unsafe"
   temporary="$(mktemp "${CONFIG_DIR}/.tunnel-agent-migrate.XXXXXX")"
   /usr/bin/python3 - "$TUNNEL_CONFIG_FILE" "$temporary" <<'PY'
@@ -290,20 +341,32 @@ PY
   chown root:"$SERVICE_GROUP" "$temporary"; chmod 0440 "$temporary"; mv -f -- "$temporary" "$TUNNEL_CONFIG_FILE"
   systemctl daemon-reload
   systemctl enable --now "$HOME_SERVICE" "$TUNNEL_SERVICE" >/dev/null
+  if [[ "$restart_home" == true ]]; then systemctl restart "$HOME_SERVICE"; fi
   systemctl is-active --quiet "$HOME_SERVICE" || die "Mobile home tunnel server is unavailable"
   systemctl is-active --quiet "$TUNNEL_SERVICE" || die "Mobile home tunnel relay agent is unavailable"
 }
 
 home_profile() {
   [[ $# -eq 4 ]] || die "home-profile requires DEVICE_ID ADDRESS SERVER PORT"
+  local lan=() direct=""
   ensure_home_server
-  /usr/bin/python3 - "$HOME_CONFIG" "$TUNNEL_SECRET_FILE" "$1" "$2" "$3" "$4" <<'PY'
+  # At home the phone reaches this EasyPi directly over the LAN instead of
+  # through the VPS relay; elsewhere it falls back to the relay.
+  read -r -a lan < <(home_lan) || true
+  [[ ${#lan[@]} -eq 3 ]] && direct="${lan[1]}:${PRISM_LINK_PORT}"
+  /usr/bin/python3 - "$HOME_CONFIG" "$TUNNEL_SECRET_FILE" "$1" "$2" "$3" "$4" "$direct" <<'PY'
 import hashlib,hmac,ipaddress,json,re,sys,uuid
 from pathlib import Path
 cfg=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")); relay_secret=bytes.fromhex(Path(sys.argv[2]).read_text(encoding="ascii").strip())
 device=str(uuid.UUID(sys.argv[3])); address=ipaddress.ip_interface(sys.argv[4]); server=sys.argv[5].strip().lower(); port=int(sys.argv[6])
+direct=sys.argv[7] if len(sys.argv)>7 else ""
 if address.version!=4 or address.network.prefixlen!=32 or address.ip not in ipaddress.ip_network("10.77.0.0/24"): raise SystemExit("invalid address")
 if not re.fullmatch(r"[a-z0-9.-]{1,253}",server) or not 1024<=port<=65535: raise SystemExit("invalid endpoint")
+if direct:
+ direct_host,_,direct_port=direct.rpartition(":")
+ if not any(ipaddress.IPv4Address(direct_host) in ipaddress.ip_network(n) for n in ("10.0.0.0/8","172.16.0.0/12","192.168.0.0/16")) or direct_port!="9083": raise SystemExit("invalid direct endpoint")
+ # The relay agent's loopback listener is not a direct path for a phone.
+ if str(cfg.get("prism_link_listen","")).split(":")[0] not in {"0.0.0.0",direct_host}: direct=""
 master=bytes.fromhex(cfg["client_auth_key"]); psk=hmac.new(master,("easypi/mobile-auth/v1/"+device).encode("ascii"),hashlib.sha256).hexdigest()
 relay_id=hmac.new(relay_secret,b"easypi-mobile-link-installation-v1",hashlib.sha256).hexdigest()[:32]
 # Per-phone relay route key: prismlink.MobileRouteKey(installation secret,
@@ -313,7 +376,7 @@ route_key=hmac.new(relay_secret,b"easypi/prismlink/mobile-route-key/v1\x00"+clie
 print(json.dumps({"address":str(address),"server_address":f"{server}:{port}","server_dial_address":"","psk_key":psk,
  "transport_key":cfg["psk_key"],"reality_server_public_key":cfg["reality_public_key"],"buffer_size":1000,"reconnect_interval":5,"mtu":1200,
  "prism_link_relay_address":f"{server}:{port+1}","prism_link_relay_installation_id":relay_id,"prism_link_relay_route_key":route_key,
- "prism_link_direct_address":""},separators=(",",":")))
+ "prism_link_direct_address":direct},separators=(",",":")))
 PY
 }
 

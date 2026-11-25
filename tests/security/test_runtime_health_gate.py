@@ -468,6 +468,7 @@ set -euo pipefail
 source '{script}'
 UPDATE_LOCK_FILE='{lock}'
 UPDATE_MARKER='{marker}'
+UPDATE_LOCK_OWNER_UID="$(id -u)"
 touch "$UPDATE_LOCK_FILE" "$UPDATE_MARKER"
 chmod 0600 "$UPDATE_LOCK_FILE" "$UPDATE_MARKER"
 do_resume() {{ :; }}
@@ -477,6 +478,33 @@ exec 9>"$UPDATE_LOCK_FILE"
 flock -n 9
 update_lock_is_held
 main resume
+flock -u 9
+"""
+
+    result = subprocess.run(["bash", "-c", command], capture_output=True, text=True)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_update_lock_counts_only_when_owned_by_root() -> None:
+    script = Path("scripts/settings/stealth_vpn.sh").read_text(encoding="utf-8")
+    assert "\nUPDATE_LOCK_OWNER_UID=0\n" in script
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires Linux flock ownership semantics")
+def test_update_lock_owned_by_another_user_is_not_held(tmp_path: Path) -> None:
+    script = bash_path(Path("scripts/settings/stealth_vpn.sh"))
+    lock = bash_path(tmp_path / "update.lock")
+    command = f"""
+set -euo pipefail
+source '{script}'
+UPDATE_LOCK_FILE='{lock}'
+UPDATE_LOCK_OWNER_UID="$(( $(id -u) + 1 ))"
+touch "$UPDATE_LOCK_FILE"
+chmod 0600 "$UPDATE_LOCK_FILE"
+exec 9>"$UPDATE_LOCK_FILE"
+flock -n 9
+if update_lock_is_held; then exit 10; fi
 flock -u 9
 """
 

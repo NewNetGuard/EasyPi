@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the Chameleon Linux binaries used by EasyPi's Stealth section, from the
-# vendored Go source in this directory. Requires exactly Go 1.27.3 (or set $GO).
+# vendored Go source in this directory. Requires exactly Go 1.27.4 (or set $GO).
 #
 #   ./build.sh            # developer build: server(amd64) + both Linux clients
 #   ./build.sh arm64      # install build: servers(amd64+arm64) + arm64 client

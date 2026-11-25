@@ -453,7 +453,7 @@ The phone gets the home address and EasyPi protection.
 GO=/path/to/go ./build.sh
 ```
 
-- Go 1.27.3 is required. If it is missing, `ensure-go.sh` downloads the official
+- Go 1.27.4 is required. If it is missing, `ensure-go.sh` downloads the official
   toolchain into `.build/` and verifies its SHA256.
 - Build caches (`.build/`: toolchain, patched `x/net`) belong to the project that
   owns the tree: a Chameleon checkout keeps them in its own `.build/`; a project

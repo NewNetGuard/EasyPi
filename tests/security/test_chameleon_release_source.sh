@@ -83,7 +83,7 @@ set -euo pipefail
 [[ -n "${GOMODCACHE:-}" && -d "${GOMODCACHE}" ]]
 [[ -n "${GOCACHE:-}" && -d "${GOCACHE}" ]]
 if [[ "${1:-}" == "version" ]]; then
-  echo 'go version go1.27.3 linux/amd64'
+  echo 'go version go1.27.4 linux/amd64'
   exit 0
 fi
 output=''

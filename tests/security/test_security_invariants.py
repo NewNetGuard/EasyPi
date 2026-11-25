@@ -710,6 +710,57 @@ def test_certificate_lifecycle_renews_leaf_without_rotating_ca(tmp_path: Path) -
     assert digest("ca-key.pem") != original_ca_key
 
 
+@pytest.mark.skipif(
+    os.name == "nt" or shutil.which("bash") is None or shutil.which("openssl") is None,
+    reason="the certificate generator runs on Linux with bash and openssl",
+)
+def test_certificate_generator_accepts_a_hostname_longer_than_the_cn_limit(
+    tmp_path: Path,
+) -> None:
+    # X.509 caps the subject CN at 64 characters; cloud and CI hosts often
+    # report a longer FQDN, which must not break certificate generation.
+    long_fqdn = "runnervm0abc1def.f3pvqe0u3l3e5k4hsvnmxwfjhh.bx.internal.cloudapp.net"
+    assert len(long_fqdn) > 64
+    shim = tmp_path / "bin"
+    shim.mkdir()
+    fake_hostname = shim / "hostname"
+    fake_hostname.write_text(
+        "#!/usr/bin/env bash\n"
+        '[[ "${1:-}" == "-I" ]] && { echo 192.0.2.10; exit 0; }\n'
+        f"echo {long_fqdn}\n",
+        encoding="utf-8",
+    )
+    fake_hostname.chmod(0o755)
+    cert_dir = tmp_path / "certs"
+    env = {
+        **os.environ,
+        "PATH": f"{shim}{os.pathsep}{os.environ.get('PATH', '')}",
+        "EASYPI_CERT_DIR": str(cert_dir),
+        "EASYPI_GROUP": "easypi-test-group-that-does-not-exist",
+        "CERT_BITS": "2048",
+        "CERT_DAYS": "365",
+        "EASYPI_CA_DAYS": "3650",
+    }
+
+    subprocess.run(
+        ["bash", str(Path("scripts/setup/generate_certs.sh").resolve()), "ca-signed"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=True,
+    )
+
+    details = subprocess.run(
+        ["openssl", "x509", "-in", str(cert_dir / "cert.pem"), "-noout", "-subject", "-ext", "subjectAltName"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert "CN = runnervm0abc1def" in details or "CN=runnervm0abc1def" in details
+    assert f"DNS:{long_fqdn}" in details
+
+
 def test_clean_install_requires_stealth_binaries_even_from_install_prefix() -> None:
     installer = Path("install.sh").read_text(encoding="utf-8")
     assert "die() {" in installer
@@ -1056,9 +1107,9 @@ def test_vps_nginx_keeps_the_patch_without_losing_ubuntu_security_fixes() -> Non
     # Deployed on every Deploy & Start after the frontend configuration, and
     # undone before nginx may be removed.
     assert deployment.index('"nginx frontend configuration"') < deployment.index(
-        f"{{NGINX_TOOL}} install"
+        "{NGINX_TOOL} install"
     ) < deployment.index('"systemctl restart chameleon-server"')
-    assert deployment.index(f"{{NGINX_TOOL}} remove") < deployment.index(
+    assert deployment.index("{NGINX_TOOL} remove") < deployment.index(
         "systemctl disable --now nginx.service"
     )
 
@@ -1097,6 +1148,7 @@ def test_chameleon_uses_real_nginx_and_keeps_the_go_backend_private() -> None:
         for index in range(0, 16, 2)
     )
     assert "listen 0.0.0.0:443 ssl http2 default_server;" in nginx_config
+    assert "listen [::]:443 ssl http2 default_server;" in nginx_config
     assert f"location ^~ /{expected_prefix}/" in nginx_config
     assert "proxy_pass http://127.0.0.1:9080;" in nginx_config
     assert "proxy_request_buffering off;" in nginx_config

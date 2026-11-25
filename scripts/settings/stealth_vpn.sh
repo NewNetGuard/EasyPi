@@ -60,6 +60,8 @@ DNS_PROXY_SERVICE="easypi-stealth-dns.service"
 STRICT_UNIT_TEMPLATE_DIR="/opt/EasyPi/templates/systemd"
 UPDATE_MARKER="/opt/EasyPi/.update-in-progress"
 UPDATE_LOCK_FILE="/run/lock/easypi-update.lock"
+# Safe Update holds this lock as root; only a root-owned lock file counts.
+UPDATE_LOCK_OWNER_UID=0
 RT_TABLE="51821"
 DNS_RT_TABLE="51823"
 KILL_CHAIN="EASYPI_STEALTH"
@@ -152,7 +154,7 @@ update_lock_is_held() {
   local owner mode lock_fd
   owner="$(stat -c '%u' -- "$UPDATE_LOCK_FILE" 2>/dev/null)" || return 1
   mode="$(stat -c '%a' -- "$UPDATE_LOCK_FILE" 2>/dev/null)" || return 1
-  [[ "$owner" == "0" && $((8#$mode & 8#022)) -eq 0 ]] || return 1
+  [[ "$owner" == "$UPDATE_LOCK_OWNER_UID" && $((8#$mode & 8#022)) -eq 0 ]] || return 1
   exec {lock_fd}<>"$UPDATE_LOCK_FILE" || return 1
   if flock -n "$lock_fd"; then
     flock -u "$lock_fd" 2>/dev/null || true

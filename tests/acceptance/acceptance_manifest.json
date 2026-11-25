@@ -125,6 +125,15 @@
       "risk": "external-account"
     },
     {
+      "id": "mobile",
+      "name": "Mobile app pairing and Mobile Link",
+      "ui_routes": ["/mobile"],
+      "api_prefixes": ["/api/v1/mobile"],
+      "checks": ["pairing-code", "device-list", "device-revoke", "photo-upload", "mobile-link-relay"],
+      "automation": "partial",
+      "risk": "external-device"
+    },
+    {
       "id": "settings-security",
       "name": "Security and settings",
       "ui_routes": ["/security", "/settings"],

@@ -25,6 +25,9 @@ MAX_SETTINGS_FILE_BYTES = 1024 * 1024
 COPY_CHUNK_BYTES = 1024 * 1024
 FREE_SPACE_RESERVE = 5 * 1024 * 1024 * 1024
 STATUS_FILENAME = "status.json"
+# The importer runs as root; Taildrop state, Tailscale spool files and the
+# status file it publishes must be owned by this uid.
+ROOT_UID = 0
 TAILSCALE_SOCKET_CANDIDATES = (
     Path("/run/tailscale/tailscaled.sock"),
     Path("/var/run/tailscale/tailscaled.sock"),
@@ -310,7 +313,7 @@ def _write_status(
     )
     try:
         _write_all(temporary_fd, payload)
-        os.fchown(temporary_fd, 0, owner_gid)
+        os.fchown(temporary_fd, ROOT_UID, owner_gid)
         os.fchmod(temporary_fd, 0o640)
         os.fsync(temporary_fd)
     finally:
@@ -374,8 +377,8 @@ def trusted_root_file(
         )
         if (
             expected
-            and details.st_uid == 0
-            and parent.st_uid == 0
+            and details.st_uid == ROOT_UID
+            and parent.st_uid == ROOT_UID
             and parent.st_mode & 0o022 == 0
             and (socket_file or details.st_mode & 0o022 == 0)
         ):
@@ -755,7 +758,7 @@ def _publish_receipt(
         existing_size, existing_digest = _hash_regular_file(
             destination_fd,
             published_name,
-            owner_uids=(0, owner_uid),
+            owner_uids=(ROOT_UID, owner_uid),
             link_counts=(1, 2),
         )
         if existing_size == source_size and existing_digest == expected_digest:
@@ -827,7 +830,7 @@ def _publish_receipt(
             temporary_size, temporary_digest = _hash_regular_file(
                 destination_fd,
                 temporary_name,
-                owner_uids=(0,),
+                owner_uids=(ROOT_UID,),
                 link_counts=(1,),
             )
             if temporary_size != source_size or temporary_digest != expected_digest:
@@ -1132,7 +1135,7 @@ def purge_legacy_staging(state: Path) -> None:
     """Remove files left by the unsafe CLI-based receiver; never publish them."""
     state_fd = open_directory_no_symlinks(state)
     try:
-        require_directory(state_fd, owner_uid=0, label="Taildrop state directory")
+        require_directory(state_fd, owner_uid=ROOT_UID, label="Taildrop state directory")
         for directory_name in ("incoming", "rejected"):
             try:
                 directory_fd = os.open(
@@ -1143,7 +1146,7 @@ def purge_legacy_staging(state: Path) -> None:
             except FileNotFoundError:
                 continue
             try:
-                require_directory(directory_fd, owner_uid=0, label=directory_name)
+                require_directory(directory_fd, owner_uid=ROOT_UID, label=directory_name)
                 for name in os.listdir(directory_fd):
                     details = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
                     if stat.S_ISREG(details.st_mode) or stat.S_ISLNK(details.st_mode):
@@ -1165,7 +1168,7 @@ def _partial_files(files_root: Path) -> tuple[list[Path], int]:
         root_details = files_root.lstat()
         if (
             not stat.S_ISDIR(root_details.st_mode)
-            or root_details.st_uid != 0
+            or root_details.st_uid != ROOT_UID
             or root_details.st_mode & 0o022
         ):
             raise RuntimeError("Tailscale files directory is not trusted")
@@ -1179,7 +1182,7 @@ def _partial_files(files_root: Path) -> tuple[list[Path], int]:
             continue
         if (
             not stat.S_ISDIR(profile_details.st_mode)
-            or profile_details.st_uid != 0
+            or profile_details.st_uid != ROOT_UID
             or profile_details.st_mode & 0o022
         ):
             continue
@@ -1191,7 +1194,7 @@ def _partial_files(files_root: Path) -> tuple[list[Path], int]:
             if (
                 candidate.name.endswith(".partial")
                 and stat.S_ISREG(details.st_mode)
-                and details.st_uid == 0
+                and details.st_uid == ROOT_UID
                 and details.st_nlink == 1
             ):
                 partials.append(candidate)
@@ -1328,7 +1331,7 @@ def main() -> int:
                 destination_fd = open_directory_no_symlinks(args.destination)
                 require_directory(
                     state_fd,
-                    owner_uid=0,
+                    owner_uid=ROOT_UID,
                     label="Taildrop state directory",
                 )
                 require_directory(

@@ -43,6 +43,11 @@ from app.api.v1.endpoints.camera_snapshots import capture_camera_snapshot
 from app.services.stealth_service import get_stealth_service
 from app.services.remote_access.tailscale_service import get_tailscale_service
 from app.services.mobile_prism_broker import mobile_prism_broker
+from app.services.mobile_verdict_client import (
+    MOBILE_DECISION_TTL_SECONDS,
+    full_policy_verdict,
+    policy_version,
+)
 from app.services.mobile_link_config import (
     MobileLinkConfig,
     load_mobile_link_config,
@@ -140,6 +145,8 @@ class MobileChameleonProfileResponse(BaseModel):
     address: str
     server_address: str
     server_dial_address: str
+    # The VPS's public IPv6 endpoint; empty when it has none. Tried first.
+    server_dial_address6: str = ""
     psk_key: str
     transport_key: str
     protocol: Literal["http2"] = "http2"
@@ -471,6 +478,8 @@ class PrismDnsCheckResponse(BaseModel):
     blocked: bool
     reason: str
     cache_ttl_seconds: int
+    # Changes whenever EasyPi's policy files change; empty if unknown.
+    policy_version: str = ""
 
 
 class PrismPresenceRequest(BaseModel):
@@ -1422,10 +1431,30 @@ def prism_dns_check(
     device: MobileDevice = Depends(require_mobile_device),
 ) -> PrismDnsCheckResponse:
     """Apply EasyPi's current DNS policy to a query observed on a linked phone."""
+    # The phone forgets every cached decision as soon as this changes, so a
+    # policy edit reaches it with its next check instead of after the TTL.
+    version = policy_version()
+
+    def decision(blocked: bool, reason: str) -> PrismDnsCheckResponse:
+        return PrismDnsCheckResponse(
+            domain=payload.domain,
+            blocked=blocked,
+            reason=reason,
+            cache_ttl_seconds=MOBILE_DECISION_TTL_SECONDS,
+            policy_version=version,
+        )
+
     # Use the address assigned to this authenticated phone, never one supplied
     # by the caller. The HTTPS control channel can arrive outside the tunnel.
     if device.home_tunnel_state == "active" and device.home_tunnel_address:
         address = str(ipaddress.ip_interface(device.home_tunnel_address).ip)
+        # The complete NetProtection policy for this phone, exactly as its DNS
+        # queries get it inside the home tunnel: schedules, parental
+        # categories, streaming rules, learned blocks, heuristics.
+        verdict = full_policy_verdict(payload.domain, address)
+        if verdict is not None:
+            return decision(verdict.blocked, "easypi_policy" if verdict.blocked else "allowed")
+        # NetProtection unreachable: fall back to the reduced check below.
         profile = get_profile_manager().lookup_profile(address)
         if (
             profile and profile.enabled and profile.parental_enabled
@@ -1433,19 +1462,11 @@ def prism_dns_check(
             and not profile.is_whitelisted(payload.domain)
             and profile.is_blacklisted(payload.domain)
         ):
-            return PrismDnsCheckResponse(
-                domain=payload.domain, blocked=True,
-                reason="parental_profile", cache_ttl_seconds=60,
-            )
+            return decision(True, "parental_profile")
     blocklist = get_blocklist_filter()
     blocklist.reload_if_changed()
     blocked = blocklist.is_blocked(payload.domain, check_allowlist=True)
-    return PrismDnsCheckResponse(
-        domain=payload.domain,
-        blocked=blocked,
-        reason="easypi_blocklist" if blocked else "allowed",
-        cache_ttl_seconds=300 if blocked else 60,
-    )
+    return decision(blocked, "easypi_blocklist" if blocked else "allowed")
 
 
 @router.get("/cameras", response_model=list[MobileCameraResponse])

@@ -12,6 +12,7 @@ from app.api.remote_access.tailscale_api import StatusResponse
 from app.api.remote_access.tailscale_api import SaveAuthkeyRequest
 from app.services.remote_access.tailscale_admin_api import DeviceInfo, TailscaleAdminAPI
 from app.services.remote_access.tailscale_config import TailscaleConfig
+from app.services.remote_access import tailscale_service as tailscale_service_module
 from app.services.remote_access.tailscale_service import TailscaleRemoteAccessService
 from pydantic import ValidationError
 from scripts.utils import tailscale_control
@@ -377,6 +378,10 @@ def test_taildrop_capacity_error_is_loaded_from_protected_status_file(
     )
     status_file.chmod(0o640)
     monkeypatch.setenv("EASYPI_TAILDROP_STATUS_FILE", str(status_file))
+    if hasattr(os, "geteuid"):
+        # Production trusts only the root-owned file; this one belongs to the
+        # user running the tests.
+        monkeypatch.setattr(tailscale_service_module, "TRUSTED_OWNER_UID", os.geteuid())
     service = _service(tmp_path, monkeypatch)
 
     payload = service._load_taildrop_status()

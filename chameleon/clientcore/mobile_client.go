@@ -213,6 +213,18 @@ func (m *MobileClient) SetConfigJSON(configJSON string) string {
 		}
 		cfg.ServerDialAddress = net.JoinHostPort(ip.To4().String(), port)
 	}
+	if dialAddress6 := strings.TrimSpace(cfg.ServerDialAddress6); dialAddress6 != "" {
+		// The same server over IPv6, tried first: some mobile networks reach
+		// the VPS cleanly only over IPv6. It never replaces the IPv4 endpoint.
+		host, port, err := net.SplitHostPort(dialAddress6)
+		ip := net.ParseIP(host)
+		_, port4, _ := net.SplitHostPort(cfg.ServerDialAddress)
+		if err != nil || ip == nil || ip.To4() != nil || !ip.IsGlobalUnicast() || ip.IsPrivate() ||
+			cfg.ServerDialAddress == "" || port != port4 {
+			return "server_dial_address6 must be a public IPv6 address with the IPv4 endpoint's port"
+		}
+		cfg.ServerDialAddress = net.JoinHostPort(ip.String(), port) + "," + cfg.ServerDialAddress
+	}
 	if strings.TrimSpace(cfg.PSKKey) == "" {
 		return "psk_key is required"
 	}

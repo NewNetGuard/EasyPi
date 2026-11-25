@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,6 +12,14 @@ from app.models.backup import BackupStatus, BackupType
 from app.services import backup_service as backup_service_module
 from app.services.backup_service import BackupService
 from fastapi import HTTPException
+
+
+@pytest.fixture(autouse=True)
+def _trust_test_file_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Production trusts only root-owned backup files. The fixtures here are
+    # created by the user running the tests, so trust that uid instead.
+    if hasattr(os, "geteuid"):
+        monkeypatch.setattr(backup_service_module, "TRUSTED_OWNER_UID", os.geteuid())
 
 
 class _Query:
@@ -132,6 +142,27 @@ def test_backup_archive_resolver_rejects_outside_and_unexpected_names(
         BackupService.resolve_backup_archive_path(str(unexpected))
     with pytest.raises(ValueError, match="unsafe"):
         BackupService.resolve_backup_archive_path(str(outside))
+
+
+def test_backend_trusts_only_root_owned_backup_files_by_default() -> None:
+    source = Path(backup_service_module.__file__).read_text(encoding="utf-8")
+    assert re.search(r"^TRUSTED_OWNER_UID = 0$", source, re.MULTILINE)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="file ownership is enforced on Linux")
+def test_backup_archive_owned_by_another_user_is_rejected(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backup_root = tmp_path / "backups"
+    backup_root.mkdir()
+    archive = backup_root / "config-2026-09-02-20-00-00.epibak"
+    archive.write_bytes(b"backup")
+    monkeypatch.setattr(backup_service_module, "BACKUP_DIR", str(backup_root))
+    monkeypatch.setattr(backup_service_module, "TRUSTED_OWNER_UID", os.geteuid() + 1)
+
+    with pytest.raises(ValueError, match="ownership"):
+        BackupService.resolve_backup_archive_path(str(archive))
 
 
 def test_backup_completion_requires_one_explicit_archive_marker(

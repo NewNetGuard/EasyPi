@@ -38,6 +38,7 @@ from easypi_netprotection.healthcheck import (
     RESOLVER_HEALTHCHECK_DOMAIN,
     is_internal_resolver_healthcheck,
 )
+from easypi_netprotection.chronicle.flow_log import FlowStatus
 from easypi_netprotection.server import NetProtectionServer, ServerStats
 
 
@@ -387,8 +388,9 @@ def test_resolver_healthcheck_does_not_change_server_counters() -> None:
             return b"upstream-response"
 
         server._direct_upstream_query = successful_upstream
-        response = await server._process_dns_query(query, ("127.0.0.1", 53000), "udp")
-        assert response == b"upstream-response"
+        outcome = await server._process_dns_query(query, ("127.0.0.1", 53000), "udp")
+        assert outcome.response == b"upstream-response"
+        assert outcome.status is None  # a health check is never a policy decision
         assert server.stats.to_dict() == ServerStats().to_dict()
 
         async def failed_upstream(_data: bytes, _client_ip: str) -> None:
@@ -396,17 +398,18 @@ def test_resolver_healthcheck_does_not_change_server_counters() -> None:
 
         server._direct_upstream_query = failed_upstream
         server._make_error_response = lambda *_args: b"servfail"
-        response = await server._process_dns_query(query, ("::1", 53000), "udp")
-        assert response == b"servfail"
+        outcome = await server._process_dns_query(query, ("::1", 53000), "udp")
+        assert outcome.response == b"servfail"
         assert server.stats.to_dict() == ServerStats().to_dict()
 
         server._is_safe_mode = lambda: True
         server._direct_upstream_query = successful_upstream
         normal_query = dns.message.make_query("ordinary.example", "A").to_wire()
-        response = await server._process_dns_query(
+        outcome = await server._process_dns_query(
             normal_query, ("10.23.1.31", 53000), "udp"
         )
-        assert response == b"upstream-response"
+        assert outcome.response == b"upstream-response"
+        assert outcome.status is FlowStatus.UPSTREAM
         assert server.stats.total_queries == 1
         assert server.stats.udp_queries == 1
         assert server.stats.upstream_queries == 1

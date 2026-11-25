@@ -100,7 +100,8 @@ def test_established_crypto_authentication_error_is_sanitized():
     value, secret, output = decoder()
     value.feed(protected(secret,b"\x01",0))
     assert value.authenticated_packets == 1
-    damaged = bytearray(protected(secret,b"\x01",1));damaged[-1] ^= 1
+    damaged = bytearray(protected(secret,b"\x01",1))
+    damaged[-1] ^= 1
     value.feed(bytes(damaged))
     assert output[-1]["error_code"] == "aead.authentication_failed"
     assert secret.hex() not in json.dumps(output)

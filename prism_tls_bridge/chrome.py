@@ -11,7 +11,7 @@ import secrets
 import time
 
 from .bridge import Bridge
-from .models import Endpoint, Provenance, Limits
+from .models import Provenance, Limits
 from .transport import parse_ip_packet
 from .tls import LABELS
 

@@ -163,6 +163,43 @@ class StealthSshMixin:
         return private_text, f"{public_text} easypi-stealth", f"SHA256:{digest}"
 
     @staticmethod
+    def _discover_public_ipv6(connection: Any) -> str:
+        """Return the VPS's stable global IPv6 address, or "" when it has none.
+
+        Phones dial it before the IPv4 address: on some mobile networks the
+        VPS's IPv4 transit is lossy while its IPv6 path is clean. Temporary,
+        deprecated and tentative addresses are skipped; only a public unicast
+        address is accepted, so a hostile reply cannot point phones elsewhere
+        than at a public host (the tunnel itself is still authenticated).
+        """
+        try:
+            _, stdout, _ = connection.exec_command(
+                "ip -6 -o addr show scope global", timeout=10
+            )
+            output = stdout.read(64 * 1024).decode("utf-8", errors="replace")
+        except Exception:  # noqa: BLE001 - IPv6 is optional; IPv4 still works.
+            return ""
+        return StealthSshMixin._parse_public_ipv6(output)
+
+    @staticmethod
+    def _parse_public_ipv6(output: str) -> str:
+        for line in output.splitlines():
+            fields = line.split()
+            if "inet6" not in fields or {"temporary", "deprecated", "tentative"} & set(fields):
+                continue
+            position = fields.index("inet6") + 1
+            if position >= len(fields):
+                continue
+            value = fields[position].split("/", 1)[0]
+            try:
+                address = ipaddress.IPv6Address(value)
+            except ValueError:
+                continue
+            if address.is_global and not address.ipv4_mapped:
+                return str(address)
+        return ""
+
+    @staticmethod
     def _install_authorized_key(connection: Any, public_line: str) -> None:
         _, stdout, stderr = connection.exec_command(
             'umask 077; mkdir -p -- "$HOME/.ssh"; chmod 700 -- "$HOME/.ssh"; '
@@ -243,7 +280,10 @@ class StealthSshMixin:
 
         # A fresh key-only connection proves that sshd accepts the installed key.
         verification = self._connect(ssh)
-        verification.close()
+        try:
+            public_ipv6 = self._discover_public_ipv6(verification)
+        finally:
+            verification.close()
         try:
             self._secret_delete("ssh-password")
         except Exception:
@@ -256,6 +296,7 @@ class StealthSshMixin:
         current_ssh["ssh_key_verified"] = True
         current_ssh["password"] = ""
         current_ssh["ssh_password_stored"] = False
+        current_ssh["public_ipv6"] = public_ipv6
         self._save_meta(current)
         return {
             "success": True,
