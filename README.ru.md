@@ -243,6 +243,22 @@ Marketplace намеренно описан без преувеличений: �
 
 ## 📦 Установка
 
+### Быстрая установка
+
+В Raspberry Pi OS Lite 64-bit (Trixie), от пользователя с `sudo`:
+
+```bash
+wget https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz &&
+wget https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz.sig &&
+wget https://raw.githubusercontent.com/NewNetGuard/EasyPi/main/scripts/maintenance/update_signing_key.pub &&
+openssl dgst -sha256 -verify update_signing_key.pub -signature easypi-full-aarch64-trixie.tar.gz.sig easypi-full-aarch64-trixie.tar.gz &&
+sudo mkdir -p /opt/EasyPi &&
+sudo tar -xzf easypi-full-aarch64-trixie.tar.gz -C /opt/EasyPi &&
+sudo /opt/EasyPi/install.sh --binary
+```
+
+Четвёртая команда проверяет отдельную подпись архива ключом релизов EasyPi и должна вывести `Verified OK`; иначе цепочка останавливается и ничего не устанавливается. Ключ берётся из этого репозитория: проверка подтверждает, что архив подписан ключом релизов EasyPi, но не защищает от захвата аккаунта GitHub. Для более строгой установки с ключом из независимого канала используйте контракт подписанной установки ниже. Когда установщик закончит, переходите к разделу о первом входе ниже.
+
 ### Контракт подписанной установки
 
 > [!CAUTION]

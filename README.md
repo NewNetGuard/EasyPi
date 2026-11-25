@@ -245,6 +245,22 @@ The installer checks `aarch64`, but it does not certify the Pi model, RAM, or st
 
 ## 📦 Installation
 
+### Quick install
+
+On Raspberry Pi OS Lite 64-bit (Trixie), as a user with `sudo`:
+
+```bash
+wget https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz &&
+wget https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz.sig &&
+wget https://raw.githubusercontent.com/NewNetGuard/EasyPi/main/scripts/maintenance/update_signing_key.pub &&
+openssl dgst -sha256 -verify update_signing_key.pub -signature easypi-full-aarch64-trixie.tar.gz.sig easypi-full-aarch64-trixie.tar.gz &&
+sudo mkdir -p /opt/EasyPi &&
+sudo tar -xzf easypi-full-aarch64-trixie.tar.gz -C /opt/EasyPi &&
+sudo /opt/EasyPi/install.sh --binary
+```
+
+The fourth command checks the archive's detached signature with the EasyPi release key and must print `Verified OK`; otherwise the chain stops and nothing is installed. The key comes from this repository, so the check proves that the archive was signed with the EasyPi release key but does not protect against a compromised GitHub account. For a stricter installation that takes the key from an independent channel, use the signed installation contract below. When the installer finishes, continue with [First access after a verified install](#first-access-after-a-verified-install).
+
 ### Signed installation contract
 
 > [!CAUTION]
