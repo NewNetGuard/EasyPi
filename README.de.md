@@ -257,31 +257,24 @@ sudo tar -xzf easypi-full-aarch64-trixie.tar.gz -C /opt/EasyPi &&
 sudo /opt/EasyPi/install.sh --binary
 ```
 
-Der vierte Befehl prüft die abgetrennte Signatur des Archivs mit dem EasyPi-Release-Schlüssel und muss `Verified OK` ausgeben; andernfalls bricht die Kette ab und nichts wird installiert. Der Schlüssel stammt aus diesem Repository: Die Prüfung belegt, dass das Archiv mit dem EasyPi-Release-Schlüssel signiert wurde, schützt aber nicht vor einem kompromittierten GitHub-Konto. Für eine strengere Installation, die den Schlüssel aus einem unabhängigen Kanal bezieht, nutzen Sie den unten beschriebenen Vertrag für signierte Installationen. Nach Abschluss des Installers geht es mit dem ersten Zugriff weiter (siehe unten).
+Der vierte Befehl prüft die abgetrennte Signatur des Archivs mit dem EasyPi-Release-Schlüssel und muss `Verified OK` ausgeben; andernfalls bricht die Kette ab und nichts wird installiert. Der Schlüssel stammt aus diesem Repository: Die Prüfung belegt, dass das Archiv mit dem EasyPi-Release-Schlüssel signiert wurde, schützt aber nicht vor einem kompromittierten GitHub-Konto. Eine strengere Installation über einen unabhängigen APT-Kanal ist geplant; siehe unten. Nach Abschluss des Installers geht es mit dem ersten Zugriff weiter (siehe unten).
 
-### Vertrag für signierte Installationen
+### Unabhängiger APT-Kanal (geplant)
 
 > [!CAUTION]
-> Laden Sie nicht ein Archiv und dessen Prüfsumme aus demselben Release-Kanal herunter, um anschließend das enthaltene `install.sh` als root auszuführen. Eine Prüfsumme erkennt Beschädigungen, authentifiziert aber nicht den Herausgeber.
+> Führen Sie `install.sh` niemals aus einem Archiv aus, dessen Signatur Sie nicht geprüft haben. Eine Prüfsumme erkennt Beschädigungen, authentifiziert aber nicht den Herausgeber.
 
-Ein Release kann über den vorgesehenen Ablauf nur installiert werden, wenn alle folgenden Bestandteile verfügbar sind:
+Ein strengerer Ablauf ist vorbereitet, aber noch nicht veröffentlicht. [`scripts/release/prepare_bootstrap_deb.sh`](scripts/release/prepare_bootstrap_deb.sh) baut das Paket `easypi-release-bootstrap` mit dem Installer `easypi-install-release` und dem Release-Schlüssel `/usr/share/keyrings/easypi-release.pub`. Es soll über ein separat signiertes APT-Repository außerhalb von GitHub ausgeliefert werden, damit das Ersetzen einer Installation die Kompromittierung beider Kanäle erfordert. Dieses Repository existiert noch nicht; bis dahin ist die Schnellinstallation oben der unterstützte Weg.
 
-- `easypi-full-aarch64-trixie.tar.gz`;
-- `easypi-full-aarch64-trixie.tar.gz.sig`;
-- `easypi-install-release` und `/usr/share/keyrings/easypi-release.pub`, ausgeliefert über ein unabhängig authentifiziertes EasyPi-Paket oder einen gleichwertigen Kanal.
-
-Der vorgesehene Ablauf ist in der [Vorlage für Binärreleases](distribution/public_repo_template/README.md) definiert:
+Sobald der Kanal veröffentlicht ist, sieht die Installation so aus (siehe die [Vorlage für Binärreleases](distribution/public_repo_template/README.md)):
 
 ```bash
 easypi-install-release \
-  --archive-url "https://example.invalid/easypi-full-aarch64-trixie.tar.gz" \
-  --signature-url "https://example.invalid/easypi-full-aarch64-trixie.tar.gz.sig"
+  --archive-url "https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz" \
+  --signature-url "https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz.sig"
 ```
 
-Ein optionaler SHA-256-Wert bietet zusätzlichen Schutz; die getrennte Signatur bleibt verpflichtend. Beziehen Sie einen Ersatz-Bootstrap oder Vertrauensschlüssel niemals aus demselben Kanal wie das Archiv.
-
-> [!WARNING]
-> Dieser Quellbaum kann das unabhängige Bootstrap-Paket bauen, veröffentlicht jedoch nicht selbst das signierte APT-Repository, über das Paket und Vertrauensschlüssel ausgeliefert werden müssen. Bis ein Betreiber diesen Kanal veröffentlicht und die endgültigen Artefakte auf einem sauberen unterstützten Pi geprüft hat, sind lokale Builds als Entwicklungsartefakte zu behandeln; greifen Sie nicht auf unsignierte Anweisungen zum Entpacken und Ausführen zurück.
+Beziehen Sie das Bootstrap-Paket oder seinen Vertrauensschlüssel niemals aus demselben Kanal wie das Archiv.
 
 <details>
 <summary><strong>Release-Prüfung und verbleibende Grenze</strong></summary>

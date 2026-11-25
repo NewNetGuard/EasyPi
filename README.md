@@ -259,31 +259,24 @@ sudo tar -xzf easypi-full-aarch64-trixie.tar.gz -C /opt/EasyPi &&
 sudo /opt/EasyPi/install.sh --binary
 ```
 
-The fourth command checks the archive's detached signature with the EasyPi release key and must print `Verified OK`; otherwise the chain stops and nothing is installed. The key comes from this repository, so the check proves that the archive was signed with the EasyPi release key but does not protect against a compromised GitHub account. For a stricter installation that takes the key from an independent channel, use the signed installation contract below. When the installer finishes, continue with [First access after a verified install](#first-access-after-a-verified-install).
+The fourth command checks the archive's detached signature with the EasyPi release key and must print `Verified OK`; otherwise the chain stops and nothing is installed. The key comes from this repository, so the check proves that the archive was signed with the EasyPi release key but does not protect against a compromised GitHub account. A stricter installation through an independent APT channel is planned; see below. When the installer finishes, continue with [First access after a verified install](#first-access-after-a-verified-install).
 
-### Signed installation contract
+### Independent APT channel (planned)
 
 > [!CAUTION]
-> Do not download an archive and checksum from the same release channel and then run the enclosed `install.sh` as root. A checksum detects corruption; it does not authenticate the publisher.
+> Never run `install.sh` from an archive whose signature you have not verified. A checksum detects corruption but does not authenticate the publisher.
 
-A release is installable through the intended flow only when all of these are available:
+A stricter flow is prepared but not yet published. [`scripts/release/prepare_bootstrap_deb.sh`](scripts/release/prepare_bootstrap_deb.sh) builds the `easypi-release-bootstrap` package with the `easypi-install-release` installer and the release key `/usr/share/keyrings/easypi-release.pub`. It is meant to be delivered through a separately signed APT repository hosted outside GitHub, so that replacing an installation would require compromising both channels. That repository does not exist yet; until it does, the quick install above is the supported method.
 
-- `easypi-full-aarch64-trixie.tar.gz`;
-- `easypi-full-aarch64-trixie.tar.gz.sig`;
-- `easypi-install-release` and `/usr/share/keyrings/easypi-release.pub`, delivered through an independently authenticated EasyPi package or equivalent channel.
-
-The intended flow is defined in the [binary release template](distribution/public_repo_template/README.md):
+Once the channel is published, installation becomes (see the [binary release template](distribution/public_repo_template/README.md)):
 
 ```bash
 easypi-install-release \
-  --archive-url "https://example.invalid/easypi-full-aarch64-trixie.tar.gz" \
-  --signature-url "https://example.invalid/easypi-full-aarch64-trixie.tar.gz.sig"
+  --archive-url "https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz" \
+  --signature-url "https://github.com/NewNetGuard/EasyPi/releases/latest/download/easypi-full-aarch64-trixie.tar.gz.sig"
 ```
 
-An optional SHA-256 value is defense in depth; the detached signature remains mandatory. Never obtain a replacement bootstrap or trust key from the same channel as the archive.
-
-> [!WARNING]
-> This source tree can build the independent bootstrap package, but it does not itself publish the signed APT repository that must deliver that package and trust key. Until an operator publishes that channel and validates the final artifacts on a clean supported Pi, treat locally built archives as development artifacts rather than falling back to unsigned extract-and-run instructions.
+Never take the bootstrap package or its trust key from the same channel as the archive.
 
 <details>
 <summary><strong>Release validation and remaining boundary</strong></summary>
