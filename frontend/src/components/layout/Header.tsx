@@ -12,7 +12,10 @@ import api from '../../api/client'
 import HeaderAgentActions from '../../features/agent/HeaderAgentActions'
 
 const API_BASE = getApiBaseUrl()
-const DONATE_URL = import.meta.env.VITE_DONATE_URL || ''
+// The donation banner appears only when a build sets VITE_DONATE_URL to an
+// https:// address; there is no built-in default.
+const configuredDonateUrl = (import.meta.env.VITE_DONATE_URL || '').trim()
+const DONATE_URL = configuredDonateUrl.startsWith('https://') ? configuredDonateUrl : ''
 const DONATE_MESSAGE = 'Like EasyPi? Help keep the project alive'
 
 const Header = () => {
@@ -102,7 +105,8 @@ const Header = () => {
 
   return (
     <header className="border-b border-gray-200 dark:border-dark-800 bg-white dark:bg-dark-900">
-      {/* Donation Banner (always visible) */}
+      {/* Donation banner, only when a donation address is configured */}
+      {DONATE_URL && (
       <div className="w-full border-b border-rose-200/70 dark:border-rose-900/40 bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 dark:from-rose-900/20 dark:via-amber-900/10 dark:to-rose-900/20">
         <div className="mx-auto max-w-7xl px-4 lg:px-6 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -121,6 +125,7 @@ const Header = () => {
           </a>
         </div>
       </div>
+      )}
 
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         {/* Left side - Mobile menu button */}
