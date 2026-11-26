@@ -2,6 +2,10 @@
 Description=EasyPi Mobile Home Tunnel Relay Agent
 After=network-online.target easypi-mobile-home-tunnel.service
 Wants=network-online.target easypi-mobile-home-tunnel.service
+# The relay agent serves only a configured home tunnel (the same rule the
+# updater applies before restoring it).
+ConditionFileNotEmpty=/etc/easypi-mobile-link/tunnel-agent.json
+ConditionFileNotEmpty=/etc/easypi-mobile-home/server_config.json
 
 [Service]
 Type=simple

@@ -1264,7 +1264,7 @@ sudo systemctl restart easypi-backend`}</pre>
             >
               <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Safe Update (Recommended)</div>
               <div className="mt-1 text-xs text-emerald-700/90 dark:text-emerald-200/90">
-                Keeps existing files, applies update, restarts services.
+                Keeps existing files, applies update, restarts services. Runs the installer automatically when the release changes system configuration.
               </div>
               <div className="mt-2 text-xs font-medium text-emerald-800 dark:text-emerald-300">
                 {updateBusy ? 'Running update...' : 'Run Safe Update'}

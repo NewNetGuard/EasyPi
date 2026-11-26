@@ -666,6 +666,74 @@ print(digest.hexdigest())
 PY
 }
 
+# Host configuration that only install.sh applies: system unit templates, the
+# nginx site, sudoers, the firewall and the Unbound resolver setup. A file copy
+# alone leaves /etc unchanged, so a release that changes any of these inputs
+# must run the installer even from Safe Update. Application-only releases keep
+# the fast copy-and-restart path.
+HOST_SETUP_INPUTS=(
+  install.sh
+  templates
+  scripts/setup
+  scripts/sudoers.d
+  scripts/security/setup_firewall.sh
+  scripts/services/install_netprotection.sh
+  scripts/settings/setup_prism_counterfactual.sh
+  scripts/settings/setup_prism_flowgraph.sh
+  scripts/settings/setup_prism_lineage.sh
+)
+
+host_setup_digest() {
+  python3 - "$1" "${HOST_SETUP_INPUTS[@]}" <<'PY'
+import hashlib
+import os
+import stat
+import sys
+
+root = os.path.abspath(sys.argv[1])
+digest = hashlib.sha256()
+
+
+def add_file(path, relative):
+    metadata = os.lstat(path)
+    if not stat.S_ISREG(metadata.st_mode):
+        print("missing-or-unsafe")
+        raise SystemExit(0)
+    digest.update(relative.encode("utf-8"))
+    digest.update(b"\0")
+    with open(path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    digest.update(b"\0")
+
+
+for entry in sys.argv[2:]:
+    path = os.path.join(root, entry)
+    if not os.path.lexists(path):
+        # An input the other side lacks still changes the digest.
+        digest.update(f"absent:{entry}".encode("utf-8") + b"\0")
+        continue
+    if os.path.islink(path):
+        print("missing-or-unsafe")
+        raise SystemExit(0)
+    if os.path.isfile(path):
+        add_file(path, entry)
+        continue
+    for current, directories, filenames in os.walk(path, topdown=True, followlinks=False):
+        directories.sort()
+        filenames.sort()
+        for name in directories:
+            if os.path.islink(os.path.join(current, name)):
+                print("missing-or-unsafe")
+                raise SystemExit(0)
+        for name in filenames:
+            file_path = os.path.join(current, name)
+            add_file(file_path, os.path.relpath(file_path, root).replace(os.sep, "/"))
+
+print(digest.hexdigest())
+PY
+}
+
 CUR_VER="$(get_ver "${TARGET_DIR}" || true)"
 NEW_VER="$(get_ver "${PAYLOAD}" || true)"
 if [[ -n "${CUR_VER}" && -n "${NEW_VER}" && "${ALLOW_DOWNGRADE}" -eq 0 && "${NEW_VER}" != "${CUR_VER}" ]]; then
@@ -682,6 +750,15 @@ INSTALLED_CHAMELEON_DIGEST="$(chameleon_source_digest "${TARGET_DIR}/chameleon")
 if [[ "${PAYLOAD_CHAMELEON_DIGEST}" != "${INSTALLED_CHAMELEON_DIGEST}" ]]; then
   RUN_INSTALL=1
   info "Chameleon sources changed; the transport binaries will be rebuilt automatically."
+fi
+
+PAYLOAD_HOST_DIGEST="$(host_setup_digest "${PAYLOAD}")"
+[[ "${PAYLOAD_HOST_DIGEST}" =~ ^[a-f0-9]{64}$ ]] \
+  || die "Signed release contains unsafe host setup files"
+INSTALLED_HOST_DIGEST="$(host_setup_digest "${TARGET_DIR}")"
+if [[ "${RUN_INSTALL}" -eq 0 && "${PAYLOAD_HOST_DIGEST}" != "${INSTALLED_HOST_DIGEST}" ]]; then
+  RUN_INSTALL=1
+  info "Host configuration changed; the installer will apply it automatically."
 fi
 
 # --- Dry run: preview the file changes and stop (no snapshot, no apply) ---

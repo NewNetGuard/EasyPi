@@ -2,6 +2,10 @@
 Description=EasyPi Mobile Home Packet Tunnel
 After=network-online.target easypi-netprotection.service
 Wants=network-online.target
+# The home server exists only after `mobile_link_agent.sh ensure-home`. Without
+# its configuration the unit is skipped instead of failing and restarting
+# every 5 s (the relay agent's Wants= would otherwise keep pulling it in).
+ConditionFileNotEmpty=/etc/easypi-mobile-home/server_config.json
 
 [Service]
 Type=simple

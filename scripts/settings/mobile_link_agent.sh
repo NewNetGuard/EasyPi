@@ -273,6 +273,18 @@ ensure_direct_firewall() {
   ufw allow in on "${lan[0]}" from "${lan[2]}" to any port "$PRISM_LINK_PORT" proto udp comment "$rule" >/dev/null
 }
 
+# Without a home server configuration the home tunnel units must not run.
+# Earlier releases enabled the relay agent together with Mobile Link, and its
+# Wants= kept starting the unconfigured home server, which failed and restarted
+# every 5 s. The units' Condition stops fresh starts, but systemd does not
+# re-check it on automatic restarts, so a running loop is stopped here; every
+# signed update calls ensure-endpoint.
+stop_unconfigured_home_tunnel() {
+  [[ -s "$HOME_CONFIG" ]] && return 0
+  systemctl disable --now "$TUNNEL_SERVICE" "$HOME_SERVICE" >/dev/null 2>&1 || true
+  systemctl reset-failed "$TUNNEL_SERVICE" "$HOME_SERVICE" >/dev/null 2>&1 || true
+}
+
 ensure_home_server() {
   local temporary restart_home=false
   systemctl is-enabled --quiet "$SERVICE" || die "Enable Mobile Link before starting the home tunnel"
@@ -395,7 +407,14 @@ case "$action" in
   enable)
     [[ $# -eq 0 ]] || die "enable accepts no arguments"
     [[ -s "$CONFIG_FILE" && -s "$SECRET_FILE" ]] || die "configure Mobile Link first"
-    systemctl enable --now "$SERVICE" "$TUNNEL_SERVICE" >/dev/null
+    systemctl enable --now "$SERVICE" >/dev/null
+    # The home tunnel relay agent belongs to the home tunnel; ensure-home
+    # enables it once that server is configured.
+    if [[ -s "$TUNNEL_CONFIG_FILE" && -s "$HOME_CONFIG" ]]; then
+      systemctl enable --now "$TUNNEL_SERVICE" >/dev/null
+    else
+      stop_unconfigured_home_tunnel
+    fi
     print_status
     ;;
   disable)
@@ -429,6 +448,7 @@ PY
   ensure-endpoint)
     [[ $# -eq 0 ]] || die "ensure-endpoint accepts no arguments"
     ensure_private_endpoint
+    stop_unconfigured_home_tunnel
     print_status
     ;;
   ensure-home)
