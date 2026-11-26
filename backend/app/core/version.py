@@ -10,7 +10,7 @@ crash a version lookup — keep it in sync with ``VERSION`` as a last resort.
 """
 from pathlib import Path
 
-_FALLBACK = "1.1.9"
+_FALLBACK = "1.1.10"
 
 
 def _read_version() -> str:

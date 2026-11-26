@@ -36,6 +36,8 @@ readonly -a EASYPI_UNITS=(
   easypi-netprotection-state-maintenance.service
   easypi-ipv6-policy-guard.service
   easypi-ipv6-policy-guard.timer
+  easypi-unbound-transport.timer
+  easypi-unbound-transport.service
   easypi-prism-shadow.service
   easypi-prism-flowgraph.service
   easypi-prism-endpoint-bridge.socket
@@ -467,6 +469,7 @@ remove_host_integration() {
     /etc/sysctl.d/99-easypi-tailscale-exit-node.conf \
     /etc/unbound/unbound.conf.d/easypi-recursive.conf \
     /etc/unbound/unbound.conf.d/easypi.conf \
+    /etc/unbound/unbound.conf.d/easypi-transport.conf \
     /etc/cron.monthly/easypi-cert-renewal \
     /etc/letsencrypt/renewal-hooks/deploy/easypi-doh.sh
 

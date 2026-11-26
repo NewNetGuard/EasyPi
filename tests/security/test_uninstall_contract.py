@@ -69,6 +69,8 @@ def test_uninstaller_covers_every_locally_installed_easypi_unit() -> None:
         "easypi-netprotection-state-maintenance.service",
         "easypi-ipv6-policy-guard.service",
         "easypi-ipv6-policy-guard.timer",
+        "easypi-unbound-transport.timer",
+        "easypi-unbound-transport.service",
         "easypi-prism-shadow.service",
         "easypi-prism-flowgraph.service",
         "easypi-prism-lineage.service",

@@ -56,6 +56,7 @@ uninstall_unbound() {
         info "Removing EasyPi Unbound configuration..."
         rm -f "${UNBOUND_CONF_FILE}"
     fi
+    rm -f "${UNBOUND_CONF_DIR}/easypi-transport.conf"
     
     # Restore NetProtection to use public DNS
     if [[ -f "${NETPROTECTION_CONFIG}" ]]; then
@@ -185,7 +186,18 @@ server:
     # DNSSEC hardening
     harden-glue: yes
     harden-dnssec-stripped: yes
-    harden-referral-path: yes
+    # harden-referral-path stays at Unbound's default (no). It is an
+    # experimental, non-standard option that validates every nameserver NS set
+    # and address on the referral path; that multiplies the upstream queries of
+    # a cold lookup and pushes requests over max-global-quota, so they fail with
+    # SERVFAIL. Answers are still validated from the root trust anchor down.
+    harden-referral-path: no
+
+    # How long an answer that failed validation is served from cache. A zone
+    # whose DNSKEY fetch failed is already held as bad for Unbound's fixed 60 s;
+    # the default 60 s here came on top of that (about 105 s of SERVFAIL after
+    # a 4 s outage, against 60 s with 10). Bogus data is still never returned.
+    val-bogus-ttl: 10
     harden-algo-downgrade: yes
     harden-below-nxdomain: yes
     harden-large-queries: yes
@@ -249,6 +261,18 @@ UNBOUND_CONFIG
     fi
     chown unbound:unbound /var/lib/unbound/root.key 2>/dev/null || true
     
+    # IPv6 transport follows measured IPv6 reachability (do-ip6 in its own
+    # snippet); the timer installed by install.sh keeps it current afterwards.
+    header "Checking IPv6 Transport"
+
+    local transport_script
+    transport_script="$(dirname "$(readlink -f "$0")")/../maintenance/unbound_ipv6_transport.sh"
+    if [[ -f "${transport_script}" ]]; then
+        bash "${transport_script}" --no-reload || warn "IPv6 transport check failed; Unbound keeps its current transport"
+    else
+        warn "IPv6 transport check not found: ${transport_script}"
+    fi
+
     # Test configuration
     header "Testing Unbound Configuration"
     

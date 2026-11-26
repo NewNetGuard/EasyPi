@@ -1,0 +1,11 @@
+[Unit]
+Description=Re-check Unbound IPv6 transport against real IPv6 reachability
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Unit=easypi-unbound-transport.service
+
+[Install]
+WantedBy=timers.target

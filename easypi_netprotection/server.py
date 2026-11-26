@@ -83,6 +83,13 @@ if _doh_tp_env:
     }
 
 
+def _wire_rcode(response_data: bytes) -> str:
+    """RCODE text of a raw DNS answer, read from the header without a full parse."""
+    if len(response_data) < 4:
+        return "SERVFAIL"
+    return dns.rcode.to_text(response_data[3] & 0x0F)
+
+
 # ════════════════════════════════════════════════════════════════════════════════
 # SERVER STATE
 # ════════════════════════════════════════════════════════════════════════════════
@@ -589,6 +596,7 @@ class NetProtectionServer:
                 await self._log_flow(
                     flow_id, domain, qtype_str, client_ip, protocol,
                     FlowStatus.UPSTREAM, verdict, start_time, response_ips=resolved_ips,
+                    response_code=_wire_rcode(response_data),
                 )
                 return QueryOutcome(response_data, FlowStatus.UPSTREAM)
             else:
@@ -1375,8 +1383,14 @@ class NetProtectionServer:
         verdict: Any | None,
         start_time: datetime,
         response_ips: list[str] | None = None,
+        response_code: str | None = None,
     ) -> None:
-        """Логирование DNS-потока."""
+        """Логирование DNS-потока.
+
+        response_code is the RCODE of the answer actually sent to the client
+        (for forwarded answers, the upstream's); when omitted it is derived
+        from the flow status.
+        """
         if is_internal_resolver_healthcheck(client_ip, domain):
             return
         if not self.flow_logger:
@@ -1407,12 +1421,13 @@ class NetProtectionServer:
         reason = getattr(reason, "value", reason)
         categories = [f"{FLOW_REASON_PREFIX}{reason}"] if isinstance(reason, str) and reason else []
 
-        response_code = "NOERROR"
-        if status == FlowStatus.FAILED:
-            response_code = "SERVFAIL"
-        elif status == FlowStatus.BLOCKED:
-            if reason == "rewrite_nxdomain" or self.config.block_mode == "nxdomain":
-                response_code = "NXDOMAIN"
+        if response_code is None:
+            response_code = "NOERROR"
+            if status == FlowStatus.FAILED:
+                response_code = "SERVFAIL"
+            elif status == FlowStatus.BLOCKED:
+                if reason == "rewrite_nxdomain" or self.config.block_mode == "nxdomain":
+                    response_code = "NXDOMAIN"
 
         entry = FlowEntry(
             flow_id=flow_id,

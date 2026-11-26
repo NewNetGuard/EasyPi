@@ -1,0 +1,28 @@
+[Unit]
+Description=EasyPi Unbound IPv6 transport check
+Documentation=file:///opt/EasyPi/scripts/maintenance/unbound_ipv6_transport.sh
+After=network-online.target unbound.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/bin/bash /opt/EasyPi/scripts/maintenance/unbound_ipv6_transport.sh
+UMask=0022
+TimeoutStartSec=90
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/etc/unbound/unbound.conf.d
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+# The snippet directory and the Unbound control socket are root-owned, so the
+# check needs no capabilities beyond being uid 0.
+CapabilityBoundingSet=

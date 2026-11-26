@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img alt="Версия 1.1.9" src="https://img.shields.io/badge/version-1.1.9-FF6B35?style=for-the-badge" /></a>
+  <a href="VERSION"><img alt="Версия 1.1.10" src="https://img.shields.io/badge/version-1.1.10-FF6B35?style=for-the-badge" /></a>
   <a href="#supported-platform"><img alt="Raspberry Pi OS Trixie" src="https://img.shields.io/badge/Raspberry%20Pi%20OS-Trixie-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" /></a>
   <a href="#project-status"><img alt="Активная разработка" src="https://img.shields.io/badge/status-active%20development-F59E0B?style=for-the-badge" /></a>
   <a href="LICENSE"><img alt="Лицензия с доступным исходным кодом" src="https://img.shields.io/badge/license-source%20available-334155?style=for-the-badge" /></a>
@@ -65,7 +65,7 @@ EasyPi не оказывается автоматически на пути ка
 
 | | Текущее состояние |
 |---|---|
-| **Версия** | [`1.1.9`](VERSION) |
+| **Версия** | [`1.1.10`](VERSION) |
 | **Официальная цель бинарной сборки** | Raspberry Pi OS Lite 64-bit · Debian Trixie · `aarch64` |
 | **Разработка** | Активная; поведение может зависеть от оборудования, вышестоящей маршрутизации, IPv6 и сторонних служб |
 | **Бинарная установка** | Контракт подписанной установки существует, но независимый канал доставки загрузчика и ключа ещё не завершён |
@@ -501,6 +501,6 @@ EasyPi распространяется по модели **source available** �
 Сообщения о проблемах и pull request приветствуются в [официальном репозитории EasyPi](https://github.com/NewNetGuard/EasyPi). Можно сделать fork репозитория на GitHub и публиковать в нём изменения исходного кода в некоммерческих целях, если fork сохраняет лицензию и все уведомления и не выдаётся за официальный релиз. В fork допускается только исходный код: готовые бинарные файлы, установщики, архивы релизов и образы контейнеров распространять нельзя, в том числе через релизы fork. Это не предоставляет права на коммерческую эксплуатацию или общее распространение. Разрешены личное семейное использование и частные сборки, подписанные собственным ключом. Полные условия приведены в [LICENSE](LICENSE).
 
 <p align="center">
-  <sub>EasyPi v1.1.9 · Raspberry Pi OS Trixie · Активная разработка</sub><br />
+  <sub>EasyPi v1.1.10 · Raspberry Pi OS Trixie · Активная разработка</sub><br />
   <a href="#top">Наверх</a>
 </p>

@@ -1324,6 +1324,27 @@ setup_unbound() {
   else
     warn "Unbound setup script not found - skipping"
   fi
+  setup_unbound_transport_check
+}
+
+# Keep Unbound's do-ip6 in step with real IPv6 reachability (see
+# scripts/maintenance/unbound_ipv6_transport.sh): at boot and every few minutes.
+setup_unbound_transport_check() {
+  local script_path="${SCRIPTS_DST}/maintenance/unbound_ipv6_transport.sh"
+  local unit
+  [[ -f "${script_path}" && ! -L "${script_path}" ]] \
+    || { warn "Unbound IPv6 transport check is missing - skipping"; return 0; }
+  chmod 0750 "${script_path}"
+  for unit in easypi-unbound-transport.service easypi-unbound-transport.timer; do
+    [[ -f "${BASE_DIR}/templates/systemd/${unit}" && ! -L "${BASE_DIR}/templates/systemd/${unit}" ]] \
+      || { warn "Template ${unit} is missing - skipping the IPv6 transport check"; return 0; }
+    backup_path_if_exists "/etc/systemd/system/${unit}"
+    install -o root -g root -m 0644 "${BASE_DIR}/templates/systemd/${unit}" "/etc/systemd/system/${unit}"
+    sed -i "s|/opt/EasyPi|${EASYPI_PREFIX}|g" "/etc/systemd/system/${unit}"
+  done
+  systemctl daemon-reload
+  systemctl enable --now easypi-unbound-transport.timer \
+    || warn "Could not enable the Unbound IPv6 transport timer"
 }
 
 setup_tailscale_exit_node() {
